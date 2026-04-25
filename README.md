@@ -118,7 +118,7 @@ Clone or unpack this repo into `~/`:
 
 ```bash
 cd ~
-git clone https://github.com/Musul/pi-personal-agent .   # or unzip into $HOME
+git clone https://github.com/Musul/pi-personal-agent.git .   # or unzip into $HOME
 ```
 
 Populate the forks (one-time) and install deps. Run without `--apply` first for a dry-run summary:
