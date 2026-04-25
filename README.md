@@ -107,8 +107,16 @@ The launcher script (step 4 of the widget section below) calls this on every boo
 
 ### 2. Base packages
 
+First, update Termux's package index and upgrade installed packages. You'll be prompted a few times during the upgrade (config file overwrites, service restarts) — accept each one with **Y** + Enter:
+
 ```bash
-pkg update && pkg install nodejs-lts git poppler tesseract curl -y
+apt update && apt full-upgrade
+```
+
+Then install the runtime dependencies:
+
+```bash
+pkg install nodejs-lts git poppler tesseract curl -y
 ```
 ```bash
 npm install -g @mariozechner/pi-coding-agent
@@ -124,8 +132,8 @@ git clone https://github.com/Musul/pi-personal-agent.git .   # or unzip into $HO
 Populate the forks (one-time) and install deps. Run without `--apply` first for a dry-run summary:
 
 ```bash
-bash ~/pi-system/scripts/migrate.sh           # dry run
-bash ~/pi-system/scripts/migrate.sh --apply   # execute
+bash ~/pi-personal-agent/pi-system/scripts/migrate.sh           # dry run
+bash ~/pi-personal-agent/pi-system/scripts/migrate.sh --apply   # execute
 ```
 
 Copy `.env.example` to `~/.env`, fill values, source it from `~/.bashrc`:
