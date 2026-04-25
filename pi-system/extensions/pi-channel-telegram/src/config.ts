@@ -6,6 +6,7 @@ export interface TelebridgeConfig {
 	botToken: string;
 	chatId: number | null;
 	notifyTools?: boolean;
+	autoEnable?: boolean;
 }
 
 const CONFIG_DIR = path.join(os.homedir(), ".pi", "agent");
@@ -20,6 +21,7 @@ export function loadConfig(): TelebridgeConfig | null {
 				botToken: data.botToken,
 				chatId: typeof data.chatId === "number" ? data.chatId : null,
 				notifyTools: typeof data.notifyTools === "boolean" ? data.notifyTools : undefined,
+				autoEnable: typeof data.autoEnable === "boolean" ? data.autoEnable : undefined,
 			};
 		}
 		return null;

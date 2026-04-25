@@ -29,7 +29,8 @@
     "/telegram",
     "/telegram setup",
     "/telegram status",
-    "/telegram tools"
+    "/telegram tools",
+    "/telegram autostart"
   ],
   "user_docs": "~/workspace/AGENTS.md",
   "changelog": "./CHANGES.md",

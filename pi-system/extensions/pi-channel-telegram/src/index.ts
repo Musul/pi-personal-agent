@@ -206,13 +206,27 @@ export default function (pi: ExtensionAPI) {
 
 			if (subcommand === "status") {
 				const botRunning = getBot() !== null;
+				const cfg = loadConfig();
 				const lines = [
 					`Bot: ${botRunning ? "✅ running" : "❌ stopped"}`,
 					`Chat ID: ${chatId ?? "not set"}`,
 					`Relay: ${relayEnabled ? "🟢 enabled" : "🔴 disabled"}`,
 					`Tool notifications: ${notifyToolsEnabled ? "🟢 on" : "🔴 off"}`,
+					`Autostart on session: ${cfg?.autoEnable ? "🟢 on" : "🔴 off"}`,
 				];
 				ctx.ui.notify(lines.join("\n"), "info");
+				return;
+			}
+
+			if (subcommand === "autostart") {
+				const cfg = loadConfig();
+				if (!cfg) {
+					ctx.ui.notify("Run /telegram setup first", "warning");
+					return;
+				}
+				const next = !(cfg.autoEnable ?? false);
+				saveConfig({ ...cfg, autoEnable: next });
+				ctx.ui.notify(`Autostart on session: ${next ? "🟢 on" : "🔴 off"}`, "info");
 				return;
 			}
 
@@ -401,6 +415,32 @@ export default function (pi: ExtensionAPI) {
 		activeTurnChatId = null;
 		if (ctx.hasUI) {
 			ctx.ui.setStatus("telebridge", undefined);
+		}
+
+		const cfg = loadConfig();
+		if (!cfg?.autoEnable) return;
+
+		const token = resolveToken();
+		const persistedChat = resolveChatId();
+		if (!token || !persistedChat) {
+			if (ctx.hasUI) {
+				ctx.ui.notify("Telegram autostart skipped — token or chat ID missing", "warning");
+			}
+			return;
+		}
+
+		try {
+			botToken = token;
+			chatId = persistedChat;
+			notifyToolsEnabled = cfg.notifyTools ?? true;
+			await startBot(token);
+			setAllowedChatId(persistedChat);
+			wireIncomingHandler(ctx);
+			await enableRelay(ctx);
+		} catch (err: any) {
+			if (ctx.hasUI) {
+				ctx.ui.notify(`Telegram autostart failed: ${err.message}`, "warning");
+			}
 		}
 	});
 
