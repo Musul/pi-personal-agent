@@ -194,6 +194,7 @@ Inside pi (`/telegram setup` once to link the bot, then `/telegram autostart` to
 ```text
 /telegram setup        # one-time: paste bot token, send /start to bot to discover chat ID
 /telegram autostart    # toggle auto-enable on every session_start (persisted in telebridge.json)
+/telegram tools        # toggle tool-execution notifications on/off (persisted in telebridge.json, survives sessions)
 /telegram status       # check bot, relay, and autostart state
 ```
 
