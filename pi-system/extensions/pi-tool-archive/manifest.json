@@ -1,0 +1,22 @@
+{
+  "name": "pi-tool-archive",
+  "version": "1.1.0",
+  "type": "tool",
+  "description": "Archive latest pi session as markdown + HTML into workspace/memory. Auto-rotate memory entries older than 7 days to pi-system/logs/sessions/archives/.",
+  "entry": "./archive-session.js",
+  "reads": [
+    "~/.pi/agent/sessions/"
+  ],
+  "writes": [
+    "~/workspace/memory/",
+    "~/pi-system/logs/sessions/archives/"
+  ],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "env": [],
+  "cli": {
+    "usage": "node ~/pi-system/extensions/pi-tool-archive/archive-session.js"
+  },
+  "user_docs": "~/workspace/AGENTS.md#archivo-de-sesiones"
+}

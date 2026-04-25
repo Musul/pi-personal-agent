@@ -1,0 +1,28 @@
+{
+  "name": "pi-tool-elevenlabs",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "ElevenLabs STT/TTS + Telegram voice sender.",
+  "entry": "./elevenlabs.js",
+  "reads": [
+    "~/.pi/agent/telebridge.json"
+  ],
+  "writes": [
+    "~/workspace/tmp/"
+  ],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "optional_runtime_deps": [
+    "pi-channel-telegram"
+  ],
+  "env": [
+    "ELEVENLABS_API_KEY"
+  ],
+  "commands": [],
+  "cli": {
+    "elevenlabs": "node ~/pi-system/extensions/pi-tool-elevenlabs/elevenlabs.js <stt|tts|voices>",
+    "send-voice": "node ~/pi-system/extensions/pi-tool-elevenlabs/send-telegram-voice.js <audio>"
+  },
+  "user_docs": "~/workspace/AGENTS.md#elevenlabs-tts-stt-voice-telegram"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "pi-tool-parse-document",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Parse PDF/DOCX/XLSX/PPTX/images into text. Fallback OCR via tesseract.",
+  "entry": "./src/index.ts",
+  "reads": [
+    "~/pi-system/extensions/pi-tool-parse-document/config.json"
+  ],
+  "writes": [
+    "~/workspace/tmp/"
+  ],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "env": [],
+  "system_deps": [
+    "poppler",
+    "tesseract"
+  ],
+  "commands": [],
+  "user_docs": "~/workspace/AGENTS.md#document-parsing"
+}

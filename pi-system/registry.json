@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "generated_at": null,
+  "extensions": {
+    "pi-provider-kimi":       { "version": "0.0.0-fork", "path": "extensions/pi-provider-kimi",       "type": "provider",  "enabled": true },
+    "pi-cron-forked":         { "version": "0.0.0-fork", "path": "extensions/pi-cron-forked",         "type": "scheduler", "enabled": true },
+    "pi-channel-telegram":    { "version": "2.0.1",      "path": "extensions/pi-channel-telegram",    "type": "channel",   "enabled": true },
+    "pi-tool-parse-document": { "version": "1.0.0",      "path": "extensions/pi-tool-parse-document", "type": "tool",      "enabled": true },
+    "pi-tool-finanzas":       { "version": "1.0.0",      "path": "extensions/pi-tool-finanzas",       "type": "tool",      "enabled": true },
+    "pi-tool-tavily":         { "version": "1.0.0",      "path": "extensions/pi-tool-tavily",         "type": "tool",      "enabled": true },
+    "pi-tool-elevenlabs":     { "version": "1.0.0",      "path": "extensions/pi-tool-elevenlabs",     "type": "tool",      "enabled": true },
+    "pi-tool-archive":        { "version": "1.1.0",      "path": "extensions/pi-tool-archive",        "type": "tool",      "enabled": true },
+    "pi-tool-backup":         { "version": "2.0.0",      "path": "extensions/pi-tool-backup",         "type": "tool",      "enabled": true }
+  }
+}

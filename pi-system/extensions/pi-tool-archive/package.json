@@ -1,0 +1,9 @@
+{
+  "name": "pi-tool-archive",
+  "version": "1.1.0",
+  "description": "Archive pi session history with memory rotation.",
+  "type": "module",
+  "bin": {
+    "pi-archive-session": "./archive-session.js"
+  }
+}

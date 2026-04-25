@@ -1,0 +1,34 @@
+{
+  "_comment": "Asset registry. Each entry: nombre, tipo (crypto|stock|stable|metal|etf|other), symbol (Binance ticker for auto-price; omit for manual), moneda_base (USDT|Bs|USD), target_pct (allocation target %), dca (true to track DCA), dca_meta_mensual_usd (monthly DCA target USD), precio_manual (override price if no symbol), news_query (custom Tavily query), skip_news (true to omit from report).",
+  "BTC": {
+    "nombre": "Bitcoin",
+    "tipo": "crypto",
+    "symbol": "BTCUSDT",
+    "moneda_base": "USDT",
+    "target_pct": 30,
+    "dca": true,
+    "dca_meta_mensual_usd": 100
+  },
+  "ETH": {
+    "nombre": "Ethereum",
+    "tipo": "crypto",
+    "symbol": "ETHUSDT",
+    "moneda_base": "USDT",
+    "target_pct": 20
+  },
+  "PAXG": {
+    "nombre": "PAX Gold",
+    "tipo": "metal",
+    "symbol": "PAXGUSDT",
+    "moneda_base": "USDT",
+    "target_pct": 20
+  },
+  "USDC": {
+    "nombre": "USD Coin (Earn)",
+    "tipo": "stable",
+    "moneda_base": "USDT",
+    "precio_manual": 1,
+    "target_pct": 30,
+    "skip_news": true
+  }
+}

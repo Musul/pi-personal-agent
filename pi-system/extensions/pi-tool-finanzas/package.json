@@ -1,0 +1,9 @@
+{
+  "name": "pi-tool-finanzas",
+  "version": "1.0.0",
+  "description": "Finance + investment tracking CLI.",
+  "bin": {
+    "pi-finanzas": "./finanzas.js",
+    "pi-inversiones": "./inversiones.js"
+  }
+}

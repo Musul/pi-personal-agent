@@ -1,0 +1,109 @@
+# ─── Secrets ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.secret
+credentials.json
+auth.json
+.deploy-token
+
+# ─── Deploy script (local-only, contains repo URL + token logic) ──
+deploy.bat
+
+# ─── Runtime config w/ tokens or personal flows ───────────
+.pi/agent/telebridge.json
+.pi/agent/auth.json
+.pi/agent/documents/
+.pi/agent/voice_messages/
+.pi/agent/photo_messages/
+.pi/agent/sessions/
+.pi/agent/pi-cron.lock
+.pi/agent/telebridge.lock
+.pi/agent/pi-cron.tab
+.pi/agent/.compact-reminder
+.pi/agent/.last-archive
+
+# ─── Node / build ─────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+dist/
+build/
+.next/
+.cache/
+
+# ─── Logs & backups ───────────────────────────────────────
+*.log
+pi-system/logs/
+!pi-system/logs/.gitkeep
+pi-system/.mode
+
+# ─── OS / editor ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.vscode-server/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Personal data in workspace ───────────────────────────
+workspace/tmp/
+workspace/memory/
+workspace/finanzas/**/*.csv
+workspace/finanzas/**/*.json
+workspace/finanzas/Finanzas-ejemplo*/
+workspace/finanzas/reports/
+workspace/finanzas/inversiones/reportes/
+workspace/finanzas-chat.html
+workspace/AGENTS.md.pre-migration.bak
+workspace/AGENTS.md
+workspace/TAREAS.md
+
+# AGENTS.md is a symlink created at runtime by set-mode.sh — not versioned.
+# Keep AGENTS.user.md and AGENTS.dev.md committed as the sources of truth.
+
+# ─── Archive of retired code ──────────────────────────────
+pi-system/extensions/_archive/
+
+# ─── Fork trees populated at install-time from upstream ───
+pi-system/extensions/pi-provider-kimi/*
+!pi-system/extensions/pi-provider-kimi/README.md
+!pi-system/extensions/pi-provider-kimi/manifest.json
+!pi-system/extensions/pi-provider-kimi/CHANGES.md
+
+pi-system/extensions/pi-cron-forked/*
+!pi-system/extensions/pi-cron-forked/README.md
+!pi-system/extensions/pi-cron-forked/manifest.json
+!pi-system/extensions/pi-cron-forked/CHANGES.md
+
+# ─── Lockfiles (opt-in per extension) ─────────────────────
+# Keep top-level lock for reproducibility; drop nested ones.
+pi-system/extensions/*/package-lock.json
+pi-system/extensions/*/yarn.lock
+pi-system/extensions/*/pnpm-lock.yaml
+
+# ─── Termux-specific host state ───────────────────────────
+.bash_history
+.npm/
+.pm2/
+.shortcuts/
+.termux/
+.termux_authinfo
+.ssh/
+.gemini/
+bin/
+
+# ─── Leftover from old layout ─────────────────────────────
+workspace/BOOTSTRAP.md.txt
+workspace/HEARTBEAT.md.txt
+workspace/PI-CRON-PATCH.md
+workspace/pi-cron-documentacion.md
+workspace/tavily.js

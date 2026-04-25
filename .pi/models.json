@@ -1,0 +1,16 @@
+{
+  "providers": {
+    "kimi": {
+      "type": "openai",
+      "baseUrl": "https://api.kimi.com/coding/v1",
+      "apiKey": "${MOONSHOT_API_KEY}"
+    }
+  },
+  "models": {
+    "kimi-coding": {
+      "provider": "kimi",
+      "id": "kimi-coding"
+    }
+  },
+  "defaultModel": "kimi-coding"
+}

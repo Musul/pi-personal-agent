@@ -1,0 +1,21 @@
+{
+  "name": "pi-tool-tavily",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Web search / extract / map CLI via Tavily API through a Cloudflare Worker proxy.",
+  "entry": "./tavily.js",
+  "reads": [],
+  "writes": [],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "env": [
+    "TAVILY_API_KEY",
+    "TAVILY_PROXY_URL"
+  ],
+  "commands": [],
+  "cli": {
+    "usage": "node ~/pi-system/extensions/pi-tool-tavily/tavily.js <search|extract|map> <arg>"
+  },
+  "user_docs": "~/workspace/AGENTS.md#web-research-tavily-cli"
+}

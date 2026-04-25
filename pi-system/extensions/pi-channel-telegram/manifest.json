@@ -1,0 +1,37 @@
+{
+  "name": "pi-channel-telegram",
+  "version": "2.0.1",
+  "type": "channel",
+  "description": "Telegram I/O channel: message relay, voice/photo/document ingest, tool call notifications, cron job notifications.",
+  "entry": "./src/index.ts",
+  "reads": [
+    "~/.pi/agent/telebridge.json"
+  ],
+  "writes": [
+    "~/.pi/agent/telebridge.json",
+    "~/.pi/agent/documents/",
+    "~/.pi/agent/voice_messages/",
+    "~/.pi/agent/photo_messages/"
+  ],
+  "consumes_events": [
+    "cron:job_complete"
+  ],
+  "emits_events": [],
+  "depends_on": [],
+  "optional_runtime_deps": [
+    "pi-tool-elevenlabs"
+  ],
+  "env": [
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID"
+  ],
+  "commands": [
+    "/telegram",
+    "/telegram setup",
+    "/telegram status",
+    "/telegram tools"
+  ],
+  "user_docs": "~/workspace/AGENTS.md",
+  "changelog": "./CHANGES.md",
+  "upstream": "acarerdinc/pi-telebridge"
+}

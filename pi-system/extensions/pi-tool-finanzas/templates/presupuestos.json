@@ -1,0 +1,10 @@
+{
+  "_comment": "Monthly budget per category in USD. Adjust to taste.",
+  "gastos-casa": 500,
+  "gastos-hormiga": 100,
+  "internet": 30,
+  "transporte": 80,
+  "salud": 60,
+  "ocio": 50,
+  "trabajo": 0
+}

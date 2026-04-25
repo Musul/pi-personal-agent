@@ -1,0 +1,46 @@
+{
+  "name": "pi-tool-finanzas",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Finance + investment tracking: transactions, loans, configurable FX rate, portfolio DCA.",
+  "entry": "./finanzas.js",
+  "entries": [
+    "./finanzas.js",
+    "./inversiones.js"
+  ],
+  "reads": [
+    "~/workspace/finanzas/"
+  ],
+  "writes": [
+    "~/workspace/finanzas/"
+  ],
+  "consumes_events": [],
+  "emits_events": [
+    "finanzas:transaction_added",
+    "finanzas:loan_added",
+    "finanzas:loan_paid",
+    "inversiones:trade_added"
+  ],
+  "depends_on": [],
+  "optional_runtime_deps": [
+    "pi-tool-tavily"
+  ],
+  "env": [
+    "FINANZAS_DATA_DIR",
+    "FX_ENABLED",
+    "FX_API_URL",
+    "FX_LABEL",
+    "FX_SYMBOL",
+    "TAVILY_SCRIPT_PATH"
+  ],
+  "external_apis": [
+    "${FX_API_URL}",
+    "https://api.binance.com/api/v3/ticker/price"
+  ],
+  "cli": {
+    "finanzas":     "node ~/pi-system/extensions/pi-tool-finanzas/finanzas.js <cmd>",
+    "inversiones":  "node ~/pi-system/extensions/pi-tool-finanzas/inversiones.js <cmd>",
+    "bootstrap":    "node ~/pi-system/extensions/pi-tool-finanzas/finanzas.js bootstrap"
+  },
+  "user_docs": "~/workspace/AGENTS.md#finanzas-e-inversiones"
+}

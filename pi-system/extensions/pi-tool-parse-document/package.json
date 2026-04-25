@@ -1,0 +1,18 @@
+{
+  "name": "pi-doc-tools",
+  "version": "1.0.0",
+  "description": "Lightweight document parser extension for pi using poppler, tesseract, mammoth, xlsx, pptx-text-parser",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./src/index.ts"]
+  },
+  "dependencies": {
+    "mammoth": "^1.12.0",
+    "pptx-text-parser": "^1.1.1",
+    "xlsx": "^0.18.5"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@sinclair/typebox": "*"
+  }
+}

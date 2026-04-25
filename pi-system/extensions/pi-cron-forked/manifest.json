@@ -1,0 +1,22 @@
+{
+  "name": "pi-cron-forked",
+  "version": "0.0.0-fork",
+  "type": "scheduler",
+  "description": "Cron scheduler extension for pi-mono. Local fork of @e9n/pi-cron. Fires cron:job_complete events that pi-channel-telegram forwards to Telegram.",
+  "entry": "./dist/index.js",
+  "reads": [
+    "~/.pi/agent/pi-cron.tab",
+    "~/.pi/agent/pi-cron.lock"
+  ],
+  "writes": [
+    "~/.pi/agent/pi-cron.lock",
+    "~/pi-system/logs/cron/"
+  ],
+  "consumes_events": [],
+  "emits_events": [
+    "cron:job_complete"
+  ],
+  "depends_on": [],
+  "upstream": "npm:@e9n/pi-cron",
+  "changelog": "./CHANGES.md"
+}

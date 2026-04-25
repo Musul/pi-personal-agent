@@ -1,0 +1,10 @@
+{
+  "name": "pi-tool-elevenlabs",
+  "version": "1.0.0",
+  "description": "ElevenLabs STT/TTS + Telegram voice sender.",
+  "type": "module",
+  "bin": {
+    "pi-elevenlabs": "./elevenlabs.js",
+    "pi-send-telegram-voice": "./send-telegram-voice.js"
+  }
+}

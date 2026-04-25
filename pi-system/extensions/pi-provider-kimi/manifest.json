@@ -1,0 +1,17 @@
+{
+  "name": "pi-provider-kimi",
+  "version": "0.0.0-fork",
+  "type": "provider",
+  "description": "LLM provider extension for Kimi/Moonshot models. Local fork of kimicodeprovider.",
+  "entry": "./extensions/index.ts",
+  "reads": [],
+  "writes": [],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "env": [
+    "MOONSHOT_API_KEY"
+  ],
+  "upstream": "npm:kimicodeprovider",
+  "changelog": "./CHANGES.md"
+}

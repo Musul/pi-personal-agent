@@ -1,0 +1,31 @@
+{
+  "name": "pi-channel-telegram",
+  "version": "2.0.1",
+  "description": "Telegram channel extension for pi-mono. Forked from pi-telebridge with cron integration, document support, async turn tracking, and retry logic.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi",
+    "pi-channel",
+    "telegram"
+  ],
+  "author": "{{OWNER}} (fork of acarerdinc/pi-telebridge)",
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "clean": "echo 'nothing to clean'",
+    "build": "echo 'nothing to build'",
+    "check": "echo 'nothing to check'"
+  },
+  "dependencies": {
+    "grammy": "^1.42.0"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  }
+}

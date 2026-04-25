@@ -1,0 +1,9 @@
+{
+  "name": "pi-tool-tavily",
+  "version": "1.0.0",
+  "description": "Tavily web research CLI for pi-mono.",
+  "type": "module",
+  "bin": {
+    "pi-tavily": "./tavily.js"
+  }
+}
