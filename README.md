@@ -93,14 +93,6 @@ Android will kill Termux in the background otherwise — your agent stops, cron 
 
 Settings → **Apps** → **Termux** → **Battery** → set to **Unrestricted** (some OEMs label it "Don't optimize" or "No restrictions"). Repeat for **Termux:Widget**.
 
-Inside Termux, run once so the wake-lock survives doze:
-
-```bash
-termux-wake-lock
-```
-
-The launcher script (step 4 of the widget section below) calls this on every boot.
-
 ### 2. Base packages
 
 First, update Termux's package index and upgrade installed packages. You'll be prompted a few times during the upgrade (config file overwrites, service restarts) — accept each one with **Y** + Enter:
