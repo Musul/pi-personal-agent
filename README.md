@@ -72,13 +72,9 @@ The same agent installation runs in two modes. The filesystem enforces the bound
 - **user** — default. `pi-system/{extensions,docs,scripts}` chmod to `a-w`. Agent can only write to `~/workspace/` and its own runtime state in `~/.pi/agent/`. `AGENTS.md` symlinks to `AGENTS.user.md`.
 - **dev** — system is unfrozen. `AGENTS.md` symlinks to `AGENTS.dev.md`, which includes the Developer Protocol and the dependency map.
 
-```bash
-bash ~/pi-system/scripts/set-mode.sh user    # customer-ready
-bash ~/pi-system/scripts/set-mode.sh dev     # author-ready
-bash ~/pi-system/scripts/set-mode.sh status  # which one is active
-```
+`AGENTS.user.md` and `AGENTS.dev.md` are committed sources of truth — edit those, never the symlink. Both define the agent's persona, red lines, and per-tool docs.
 
-`AGENTS.user.md` and `AGENTS.dev.md` are committed sources of truth — edit those, never the symlink. Both define the agent's persona, red lines, and per-tool docs. Personal placeholders (`{{USER_NAME}}`, `{{USER_LOCATION}}`, `{{USER_TZ}}`, `{{AGENT_NAME}}`) get filled in once on install.
+**Personalización conversacional (no es un wizard):** ambos archivos arrancan con bloques `<!-- ASK:* -->` en los campos `USER_NAME`, `USER_LOCATION`, `USER_TZ`, `USER_NOTES`, `AGENT_NAME`. Cada bloque le indica al agente que pregunte ese dato de forma natural en la primera conversación y, cuando lo tenga, edite **ambos** `AGENTS.*.md` reemplazando el placeholder y borrando el bloque ASK. Resultado: la primera vez que abrís `pi`, el agente te saluda, te pide tu nombre, te invita a bautizarlo y va aprendiendo tu zona horaria sobre la marcha — sin formularios. Idempotente: si un campo ya está resuelto (no quedan `<!-- ASK:* -->` ni `{{...}}` literales), no vuelve a preguntar.
 
 ## Install on a fresh Termux
 
@@ -166,14 +162,47 @@ cp .env.example ~/.env && echo 'source ~/.env' >> ~/.bashrc
 
 Required keys: `MOONSHOT_API_KEY`, `TAVILY_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ELEVENLABS_API_KEY`. Optional: `TAVILY_PROXY_URL` (Cloudflare Worker), `PI_BACKUP_INCLUDE_ENV`, `PI_BACKUP_MAX_MB`, `FX_*` (locale/currency), `FINANZAS_DATA_DIR`. Full reference + comments in [`.env.example`](.env.example).
 
-Launch:
+## SFTP from your phone (Solid Explorer)
+
+Browse and edit `~/workspace/` from any SFTP client on the same Wi-Fi — useful for dropping CSVs into `finanzas/`, pulling session archives, or editing `AGENTS.md` from a real keyboard.
+
+One-shot setup inside Termux:
 
 ```bash
-pi             # interactive
-pi --cron      # scheduled / headless mode (uses cron-mode model from settings.json)
+bash ~/pi-system/scripts/sftp-setup.sh
 ```
 
-Inside pi: `/telegram setup` to link the bot and discover the chat id.
+That script installs `openssh`, starts `sshd` on port **8022**, and prints the exact host/user/port to enter into Solid Explorer.
+
+```bash
+passwd
+```
+
+Solid Explorer connection (Android):
+
+1. Install **Solid Explorer** + its free **SFTP/FTP/Cloud plugin** from Play Store.
+2. New cloud connection → **SFTP**.
+3. Fill in:
+   - **Host** — phone LAN IP (Settings → WiFi → IP Address)
+   - **Port** — `8022`
+   - **Username** — output of `whoami` in Termux (e.g. `u0_a123`)
+   - **Auth** — password
+4. **Remote path**: `/data/data/com.termux/files/home/workspace`
+   (Termux `$HOME` is sandboxed — you must use the absolute path, `~` won't resolve.)
+
+Useful subcommands:
+
+```bash
+bash ~/pi-system/scripts/sftp-setup.sh --status   # is sshd up? what's the IP?
+bash ~/pi-system/scripts/sftp-setup.sh --enable   # autostart on Termux launch (needs termux-services)
+bash ~/pi-system/scripts/sftp-setup.sh --stop     # kill sshd
+```
+
+Caveats:
+
+- LAN-only. For remote access, tunnel through Tailscale (`pkg install tailscale`) or similar — never expose port 8022 to the public internet without a strong key + fail2ban-equivalent.
+- Phone IP changes per network. Re-run `--status` after switching Wi-Fi.
+- `sshd` does **not** survive a Termux kill unless you `--enable` it and install Termux:Boot.
 
 ## Home-screen widget (Termux:Widget)
 
@@ -225,53 +254,6 @@ termux-fix-shebang $(which pi)
 ```
 
 The `termux-fix-shebang` step is required after every `npm update` — npm rewrites the bin shim with a non-Termux shebang and the widget won't launch until it's patched.
-
-## SFTP from your phone (Solid Explorer)
-
-Browse and edit `~/workspace/` from any SFTP client on the same Wi-Fi — useful for dropping CSVs into `finanzas/`, pulling session archives, or editing `AGENTS.md` from a real keyboard.
-
-One-shot setup inside Termux:
-
-```bash
-bash ~/pi-system/scripts/sftp-setup.sh
-```
-
-That script installs `openssh`, starts `sshd` on port **8022**, and prints the exact host/user/port to enter into Solid Explorer.
-
-Two auth options — pick one:
-
-- **Password** — run `passwd` in Termux, then use it from the client.
-- **Public key** — paste your phone/desktop public key into `~/.ssh/authorized_keys.in`, then:
-
-  ```bash
-  bash ~/pi-system/scripts/sftp-setup.sh --keys
-  ```
-
-Solid Explorer connection (Android):
-
-1. Install **Solid Explorer** + its free **SFTP/FTP/Cloud plugin** from Play Store.
-2. New cloud connection → **SFTP**.
-3. Fill in:
-   - **Host** — phone LAN IP (script prints it; or `ifconfig` / Settings → About → Status)
-   - **Port** — `8022`
-   - **Username** — output of `whoami` in Termux (e.g. `u0_a123`, *not* `root`)
-   - **Auth** — password or private key matching the pubkey installed above
-4. **Remote path**: `/data/data/com.termux/files/home/workspace`
-   (Termux `$HOME` is sandboxed — you must use the absolute path, `~` won't resolve.)
-
-Useful subcommands:
-
-```bash
-bash ~/pi-system/scripts/sftp-setup.sh --status   # is sshd up? what's the IP?
-bash ~/pi-system/scripts/sftp-setup.sh --enable   # autostart on Termux launch (needs termux-services)
-bash ~/pi-system/scripts/sftp-setup.sh --stop     # kill sshd
-```
-
-Caveats:
-
-- LAN-only. For remote access, tunnel through Tailscale (`pkg install tailscale`) or similar — never expose port 8022 to the public internet without a strong key + fail2ban-equivalent.
-- Phone IP changes per network. Re-run `--status` after switching Wi-Fi.
-- `sshd` does **not** survive a Termux kill unless you `--enable` it and install Termux:Boot.
 
 ## Backup & transfer to another device
 
