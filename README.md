@@ -185,7 +185,7 @@ Solid Explorer connection (Android):
    - **Port** — `8022`
    - **Username** — output of `whoami` in Termux (e.g. `u0_a123`)
    - **Auth** — password
-4. **Remote path**: `/data/data/com.termux/files/home/workspace`
+4. **Remote path**: `/data/data/com.termux/files/home`
 
 ### First launch — Telegram
 
