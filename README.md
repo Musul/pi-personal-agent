@@ -122,18 +122,22 @@ pkg install nodejs-lts git poppler tesseract curl -y
 npm install -g @mariozechner/pi-coding-agent
 ```
 
-Clone or unpack this repo into `~/`:
+Clone the repo and move its contents directly into `$HOME`. The agent expects `~/workspace/`, `~/pi-system/`, and `~/.pi/` at the home root — **not** inside a subdirectory:
 
 ```bash
 cd ~
-git clone https://github.com/Musul/pi-personal-agent.git .   # or unzip into $HOME
+git clone https://github.com/Musul/pi-personal-agent.git
+shopt -s dotglob                  # so the move includes .pi/ and .env.example
+mv pi-personal-agent/* ~/
+rmdir pi-personal-agent
+ls -la ~/                         # sanity-check: workspace/ pi-system/ .pi/ .env.example must be visible
 ```
 
 Populate the forks (one-time) and install deps. Run without `--apply` first for a dry-run summary:
 
 ```bash
-bash ~/pi-personal-agent/pi-system/scripts/migrate.sh           # dry run
-bash ~/pi-personal-agent/pi-system/scripts/migrate.sh --apply   # execute
+bash ~/pi-system/scripts/migrate.sh           # dry run
+bash ~/pi-system/scripts/migrate.sh --apply   # execute
 ```
 
 Copy `.env.example` to `~/.env`, fill values, source it from `~/.bashrc`:
