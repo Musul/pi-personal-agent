@@ -162,18 +162,6 @@ cp .env.example ~/.env && echo 'source ~/.env' >> ~/.bashrc
 
 Required keys: `MOONSHOT_API_KEY`, `TAVILY_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ELEVENLABS_API_KEY`. Optional: `TAVILY_PROXY_URL` (Cloudflare Worker), `PI_BACKUP_INCLUDE_ENV`, `PI_BACKUP_MAX_MB`, `FX_*` (locale/currency), `FINANZAS_DATA_DIR`. Full reference + comments in [`.env.example`](.env.example).
 
-### First launch — Telegram
-
-Inside pi (`/telegram setup` once to link the bot, then `/telegram autostart` to enable session-start auto-relay):
-
-```text
-/telegram setup        # one-time: paste bot token, send /start to bot to discover chat ID
-/telegram autostart    # toggle auto-enable on every session_start (persisted in telebridge.json)
-/telegram status       # check bot, relay, and autostart state
-```
-
-After `autostart` is on, every time you launch `pi` (manually or via the home-screen widget) the Telegram channel comes up automatically — no `/telegram` toggle needed.
-
 ## SFTP from your phone (Solid Explorer)
 
 Browse and edit `~/workspace/` from any SFTP client on the same Wi-Fi — useful for dropping CSVs into `finanzas/`, pulling session archives, or editing `AGENTS.md` from a real keyboard.
@@ -200,6 +188,18 @@ Solid Explorer connection (Android):
    - **Username** — output of `whoami` in Termux (e.g. `u0_a123`)
    - **Auth** — password
 4. **Remote path**: `/data/data/com.termux/files/home/workspace`
+
+### First launch — Telegram
+
+Inside pi (`/telegram setup` once to link the bot, then `/telegram autostart` to enable session-start auto-relay):
+
+```text
+/telegram setup        # one-time: paste bot token, send /start to bot to discover chat ID
+/telegram autostart    # toggle auto-enable on every session_start (persisted in telebridge.json)
+/telegram status       # check bot, relay, and autostart state
+```
+
+After `autostart` is on, every time you launch `pi` (manually or via the home-screen widget) the Telegram channel comes up automatically — no `/telegram` toggle needed.
 
 ## Home-screen widget (Termux:Widget)
 
