@@ -36,6 +36,16 @@ for d in "$WS" "$HOME_DIR/.pi/agent"; do
 done
 echo "  OK: $WS and ~/.pi/agent exist."
 
+say "Ensuring pi-system/ is writable (dev mode) before any fs writes"
+if $APPLY && [[ -x "$SYS/scripts/set-mode.sh" ]]; then
+  run "bash $SYS/scripts/set-mode.sh dev"
+elif $APPLY; then
+  # Fallback: directly add user write bit if set-mode.sh missing
+  for d in "$SYS/extensions" "$SYS/docs" "$SYS/scripts"; do
+    [[ -d "$d" ]] && run "chmod -R u+w $d" || true
+  done
+fi
+
 say "Ensuring pi-system/ skeleton"
 run "mkdir -p $SYS/extensions/{pi-channel-telegram,pi-tool-tavily,pi-tool-elevenlabs,pi-tool-archive,pi-tool-parse-document,pi-tool-finanzas,pi-tool-backup,pi-provider-kimi,pi-cron-forked,_archive}"
 run "mkdir -p $SYS/logs/{cron,sessions/archives,sessions/raw,backups,system}"
@@ -100,26 +110,44 @@ fi
 # ─── Forks: kimicodeprovider, @e9n/pi-cron ──────────────────────────────
 say "Forking kimicodeprovider → pi-provider-kimi"
 KIMI_SRC="/data/data/com.termux/files/usr/lib/node_modules/kimicodeprovider"
-if [[ -d "$KIMI_SRC" && ! -f "$SYS/extensions/pi-provider-kimi/package.json" ]]; then
+if [[ -f "$SYS/extensions/pi-provider-kimi/package.json" ]]; then
+  echo "  (skip) pi-provider-kimi already populated"
+elif [[ ! -d "$KIMI_SRC" ]]; then
+  echo "  ⚠️  Upstream missing: $KIMI_SRC" >&2
+  echo "      Install it globally and re-run this script:" >&2
+  echo "        npm install -g kimicodeprovider" >&2
+  MISSING_UPSTREAM=1
+else
   run "cp -r $KIMI_SRC/* $SYS/extensions/pi-provider-kimi/"
   if $APPLY; then
     node -e "const f='$SYS/extensions/pi-provider-kimi/package.json'; const p=require(f); p.name='pi-provider-kimi'; p.version=(p.version||'0.0.0')+'-fork'; require('fs').writeFileSync(f, JSON.stringify(p,null,2));"
     (cd "$SYS/extensions/pi-provider-kimi" && npm install --omit=dev --no-audit --no-fund) || echo "  (npm install failed, continue manually)"
   fi
-else
-  echo "  (skip) fork already populated or upstream not found"
 fi
 
 say "Forking @e9n/pi-cron → pi-cron-forked"
 CRON_SRC="/data/data/com.termux/files/usr/lib/node_modules/@e9n/pi-cron"
-if [[ -d "$CRON_SRC" && ! -f "$SYS/extensions/pi-cron-forked/package.json" ]]; then
+if [[ -f "$SYS/extensions/pi-cron-forked/package.json" ]]; then
+  echo "  (skip) pi-cron-forked already populated"
+elif [[ ! -d "$CRON_SRC" ]]; then
+  echo "  ⚠️  Upstream missing: $CRON_SRC" >&2
+  echo "      Install it globally and re-run this script:" >&2
+  echo "        npm install -g @e9n/pi-cron" >&2
+  MISSING_UPSTREAM=1
+else
   run "cp -r $CRON_SRC/* $SYS/extensions/pi-cron-forked/"
   if $APPLY; then
     node -e "const f='$SYS/extensions/pi-cron-forked/package.json'; const p=require(f); p.name='pi-cron-forked'; p.version=(p.version||'0.0.0')+'-fork'; require('fs').writeFileSync(f, JSON.stringify(p,null,2));"
     (cd "$SYS/extensions/pi-cron-forked" && npm install --omit=dev --no-audit --no-fund) || echo "  (npm install failed, continue manually)"
   fi
-else
-  echo "  (skip) fork already populated or upstream not found"
+fi
+
+if [[ "${MISSING_UPSTREAM:-0}" == "1" ]]; then
+  echo "" >&2
+  echo "❌ One or more upstream packages are missing. Forks were NOT populated." >&2
+  echo "   Install the missing packages above with npm install -g, then re-run:" >&2
+  echo "     bash $SYS/scripts/migrate.sh --apply" >&2
+  exit 1
 fi
 
 # ─── AGENTS.md symlink ─────────────────────────────────────────────────

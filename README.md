@@ -118,6 +118,12 @@ pkg install nodejs-lts git poppler tesseract curl -y
 npm install -g @mariozechner/pi-coding-agent
 ```
 
+Install the upstream packages that the local forks (`pi-provider-kimi`, `pi-cron-forked`) seed from. `migrate.sh` copies these into `pi-system/extensions/` and renames them so future `npm update` of the upstream cannot overwrite local changes — but the upstream must exist globally first or the migration will silently skip the fork population:
+
+```bash
+npm install -g kimicodeprovider @e9n/pi-cron
+```
+
 Clone the repo and move its contents directly into `$HOME`. The agent expects `~/workspace/`, `~/pi-system/`, and `~/.pi/` at the home root — **not** inside a subdirectory:
 
 ```bash
