@@ -150,6 +150,14 @@ bash ~/pi-system/scripts/migrate.sh           # dry run
 bash ~/pi-system/scripts/migrate.sh --apply   # execute
 ```
 
+Pick the agent mode. **user** locks `pi-system/` read-only and points `AGENTS.md` at the customer persona; **dev** unlocks the system and switches to the developer protocol. The migration script already left you in **dev** — run this only if you want **user** mode for a customer-ready install:
+
+```bash
+bash ~/pi-system/scripts/set-mode.sh user    # customer-ready (read-only system)
+bash ~/pi-system/scripts/set-mode.sh dev     # author-ready  (writable system)
+bash ~/pi-system/scripts/set-mode.sh status  # check current mode
+```
+
 Copy `.env.example` to `~/.env`, fill values, source it from `~/.bashrc`:
 
 ```bash
