@@ -108,7 +108,7 @@ The launcher script (step 4 of the widget section below) calls this on every boo
 ### 2. Base packages
 
 ```bash
-pkg update && pkg install nodejs-lts git poppler tesseract curl
+pkg update && pkg install nodejs-lts git poppler tesseract curl -y
 ```
 ```bash
 npm install -g @mariozechner/pi-coding-agent
