@@ -126,10 +126,20 @@ Clone the repo and move its contents directly into `$HOME`. The agent expects `~
 
 ```bash
 cd ~
+```
+```bash
 git clone https://github.com/Musul/pi-personal-agent.git
+```
+```bash
 shopt -s dotglob                  # so the move includes .pi/ and .env.example
+```
+```bash
 mv pi-personal-agent/* ~/
+```
+```bash
 rmdir pi-personal-agent
+```
+```bash
 ls -la ~/                         # sanity-check: workspace/ pi-system/ .pi/ .env.example must be visible
 ```
 
