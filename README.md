@@ -10,7 +10,7 @@ Designed for two audiences: yourself, and customers who want a ready-to-run agen
 .pi/agent/                  pi-mono runtime (tracked: settings.json only)
   settings.json             provider, model, autoload extensions
   telebridge.json           Telegram link state (gitignored)
-  pi-cron.tab               cron jobs (gitignored)
+  pi-cron.tab               cron jobs (tracked; ships with defaults)
 workspace/                  user-owned data — agent writes freely here
   AGENTS.md                 symlink → AGENTS.user.md or AGENTS.dev.md
   AGENTS.user.md / .dev.md  agent persona + tool docs (committed)
@@ -237,7 +237,12 @@ One-tap launch from the Android home screen. Termux:Widget itself was installed 
 - Autostart, active hours, and the cron-mode model live in `.pi/agent/settings.json` under `pi-cron`.
 - Job logs land in `pi-system/logs/cron/`.
 
-Manage from inside pi via `/cron` commands (added by the extension).
+Repo ships with two defaults in [`.pi/agent/pi-cron.tab`](.pi/agent/pi-cron.tab):
+
+- `revisar-tareas` — every 12h, reads `workspace/TAREAS.md` and ejecuta tareas pendientes autónomamente.
+- `archivar-memoria` — daily 03:00, runs `pi-tool-archive` para rotar sesiones.
+
+Edit or delete them freely — the file is yours. Manage from inside pi via `/cron` commands (added by the extension).
 
 ## Updating pi
 

@@ -21,7 +21,6 @@ deploy.bat
 .pi/agent/sessions/
 .pi/agent/pi-cron.lock
 .pi/agent/telebridge.lock
-.pi/agent/pi-cron.tab
 .pi/agent/.compact-reminder
 .pi/agent/.last-archive
 

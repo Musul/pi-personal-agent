@@ -1,0 +1,10 @@
+# pi-cron.tab — Managed by pi-cron extension
+# Format: <min> <hour> <dom> <month> <dow>  <name>  [channel:<ch>]  [disabled]  <prompt>
+#
+# Examples:
+#   0 9 * * 1-5  daily-standup  Review my td tasks and summarize what's open
+#   */15 * * * *  health-check  channel:ops  Check system health
+#   0 0 * * 0  weekly-digest  disabled  Summarize the week
+
+0 */12 * * *  revisar-tareas  Lee TAREAS.md completamente. Ejecuta autónomamente todas las tareas pendientes (buscar información, ejecutar comandos, editar archivos, etc.). Actualiza TAREAS.md con estados y resultados. Si algo requiere input mío, déjalo pendiente con nota clara. Respóndeme con: qué hiciste, qué queda pendiente, y si necesita algo. Sé breve.
+0 3 * * *  archivar-memoria  Ejecuta el script de archivado de sesión: node ~/pi-system/extensions/pi-tool-archive/archive-session.js
