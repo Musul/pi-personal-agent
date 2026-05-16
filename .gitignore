@@ -49,6 +49,7 @@ desktop.ini
 .vscode/
 .vscode-server/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
