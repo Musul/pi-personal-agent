@@ -10,6 +10,7 @@
     "pi-tool-tavily":         { "version": "1.0.0",      "path": "extensions/pi-tool-tavily",         "type": "tool",      "enabled": true },
     "pi-tool-elevenlabs":     { "version": "1.0.0",      "path": "extensions/pi-tool-elevenlabs",     "type": "tool",      "enabled": true },
     "pi-tool-archive":        { "version": "1.1.0",      "path": "extensions/pi-tool-archive",        "type": "tool",      "enabled": true },
-    "pi-tool-backup":         { "version": "2.0.0",      "path": "extensions/pi-tool-backup",         "type": "tool",      "enabled": true }
+    "pi-tool-backup":         { "version": "2.0.1",      "path": "extensions/pi-tool-backup",         "type": "tool",      "enabled": true },
+    "pi-tool-update":         { "version": "1.0.0",      "path": "extensions/pi-tool-update",         "type": "tool",      "enabled": true }
   }
 }

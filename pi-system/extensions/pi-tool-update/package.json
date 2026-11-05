@@ -1,0 +1,23 @@
+{
+  "name": "pi-tool-update",
+  "version": "1.0.0",
+  "description": "Universal /update command for the Pi personal agent: pi CLI, repo, extension deps and model catalog.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi",
+    "pi-tool",
+    "update"
+  ],
+  "author": "{{OWNER}}",
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "echo 'nothing to check'"
+  }
+}

@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# pi-remote.sh - manage a Termux-hosted Pi agent over SSH from a PC.
+#
+# This is the client side. The phone only needs sshd running (see
+# pi-system/scripts/sftp-setup.sh) and this repo in $HOME.
+#
+# Configuration, in order of precedence:
+#   1. --host/--user/--port/--key flags
+#   2. environment variables
+#   3. ~/.config/pi/remote.env
+#
+# Example ~/.config/pi/remote.env:
+#   PI_TERMUX_HOST="192.0.2.10"   # phone LAN IP or Tailscale IP
+#   PI_TERMUX_USER="u0_a123"      # `whoami` in Termux
+#   PI_TERMUX_PORT="8022"
+#   PI_TERMUX_KEY="$HOME/.ssh/id_ed25519"
+#
+# Usage:
+#   pi-remote.sh setup --host <ip> --user <termux-user> [--port 8022] [--key <path>]
+#   pi-remote.sh status
+#   pi-remote.sh update [pi-update args...]
+#   pi-remote.sh provider [pi-provider args...]
+#   pi-remote.sh shell
+#   pi-remote.sh run '<remote command>'
+#   pi-remote.sh push <local-path> <remote-path>
+#   pi-remote.sh print
+#
+# Examples:
+#   pi-remote.sh setup --host 192.0.2.10 --user u0_a123 --key ~/.ssh/id_ed25519
+#   pi-remote.sh provider status
+#   pi-remote.sh provider use opencode-go
+#   pi-remote.sh update --yes
+#   pi-remote.sh push ./AGENTS.user.md '~/workspace/AGENTS.user.md'
+
+set -euo pipefail
+
+CONFIG_FILE="${PI_REMOTE_CONFIG:-$HOME/.config/pi/remote.env}"
+HOST="${PI_TERMUX_HOST:-}"
+USER_NAME="${PI_TERMUX_USER:-}"
+PORT="${PI_TERMUX_PORT:-8022}"
+KEY="${PI_TERMUX_KEY:-}"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONFIG_FILE"
+  HOST="${PI_TERMUX_HOST:-$HOST}"
+  USER_NAME="${PI_TERMUX_USER:-$USER_NAME}"
+  PORT="${PI_TERMUX_PORT:-$PORT}"
+  KEY="${PI_TERMUX_KEY:-$KEY}"
+fi
+
+say()  { printf '\n==> %s\n' "$*"; }
+log()  { printf '  %s\n' "$*"; }
+warn() { printf '  ! %s\n' "$*" >&2; }
+die()  { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
+
+usage() {
+  sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+while (( $# )); do
+  case "$1" in
+    --host) HOST="${2:-}"; shift ;;
+    --user) USER_NAME="${2:-}"; shift ;;
+    --port) PORT="${2:-}"; shift ;;
+    --key)  KEY="${2:-}"; shift ;;
+    --config) CONFIG_FILE="${2:-}"; shift; source "$CONFIG_FILE" ;;
+    -h|--help) usage; exit 0 ;;
+    *) break ;;
+  esac
+  shift
+done
+
+COMMAND="${1:-}"
+[[ $# -gt 0 ]] && shift || true
+
+if [[ -z "$COMMAND" || "$COMMAND" == "-h" || "$COMMAND" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+# For `setup`, flags come after the command: `pi-remote.sh setup --host ...`.
+if [[ "$COMMAND" == "setup" ]]; then
+  while (( $# )); do
+    case "$1" in
+      --host) HOST="${2:-}"; shift ;;
+      --user) USER_NAME="${2:-}"; shift ;;
+      --port) PORT="${2:-}"; shift ;;
+      --key)  KEY="${2:-}"; shift ;;
+      --config) CONFIG_FILE="${2:-}"; shift; source "$CONFIG_FILE" ;;
+      *) die "Unknown option for setup: $1" ;;
+    esac
+    shift
+  done
+fi
+
+[[ -n "$HOST" ]] || die "PI_TERMUX_HOST is not set. Use --host, env, or $CONFIG_FILE"
+[[ -n "$USER_NAME" ]] || die "PI_TERMUX_USER is not set. Use --user, env, or $CONFIG_FILE"
+have ssh || die "ssh is not installed on this machine"
+
+SSH=(ssh -p "$PORT" -o ConnectTimeout=10 -o ServerAliveInterval=30 -o StrictHostKeyChecking=accept-new)
+SCP=(scp -P "$PORT" -o StrictHostKeyChecking=accept-new)
+if [[ -n "$KEY" ]]; then
+  SSH+=(-i "$KEY")
+  SCP+=(-i "$KEY")
+fi
+
+quote_args() {
+  local out="" a
+  for a in "$@"; do out+=" $(printf '%q' "$a")"; done
+  printf '%s' "$out"
+}
+
+remote() {
+  local cmd="$1"
+  "${SSH[@]}" "$USER_NAME@$HOST" "$cmd"
+}
+
+cmd_status() {
+  say "Termux @ $HOST:$PORT"
+  remote "echo 'host:' \$(hostname); echo 'user:' \$(whoami); echo 'node:' \$(node -v 2>/dev/null || echo missing); echo 'pi:' \$(pi --version 2>/dev/null || echo missing); echo; bash ~/pi-system/scripts/pi-provider.sh status"
+  say "Update check"
+  remote "bash ~/pi-system/scripts/pi-update.sh --check --no-repo --no-ext --no-models --json" || true
+}
+
+cmd_update() {
+  local args
+  args="$(quote_args "$@")"
+  remote "bash ~/pi-system/scripts/pi-update.sh --yes $args"
+}
+
+cmd_provider() {
+  local args
+  args="$(quote_args "$@")"
+  if [[ -z "$args" ]]; then
+    remote "bash ~/pi-system/scripts/pi-provider.sh status"
+  else
+    remote "bash ~/pi-system/scripts/pi-provider.sh $args"
+  fi
+}
+
+cmd_shell() {
+  "${SSH[@]}" -t "$USER_NAME@$HOST"
+}
+
+cmd_run() {
+  [[ $# -gt 0 ]] || die "Usage: pi-remote.sh run '<remote command>'"
+  remote "$*"
+}
+
+cmd_push() {
+  [[ $# -eq 2 ]] || die "Usage: pi-remote.sh push <local-path> <remote-path>"
+  local local_path="$1" remote_path="$2"
+  [[ -e "$local_path" ]] || die "Local path not found: $local_path"
+  "${SCP[@]}" "$local_path" "$USER_NAME@$HOST:$remote_path"
+}
+
+cmd_print() {
+  printf '%q ' "${SSH[@]}"
+  printf '%q@%q\n' "$USER_NAME" "$HOST"
+}
+
+cmd_setup() {
+  local dir
+  dir="$(dirname -- "$CONFIG_FILE")"
+  mkdir -p "$dir"
+  chmod 700 "$dir" 2>/dev/null || true
+  umask 077
+  {
+    printf '# Generated by pi-remote.sh setup\n'
+    printf '# No secrets: phone address, SSH user, port and local key path.\n'
+    printf 'PI_TERMUX_HOST="%s"\n' "$HOST"
+    printf 'PI_TERMUX_USER="%s"\n' "$USER_NAME"
+    printf 'PI_TERMUX_PORT="%s"\n' "$PORT"
+    if [[ -n "$KEY" ]]; then
+      printf 'PI_TERMUX_KEY="%s"\n' "$KEY"
+    fi
+  } >"$CONFIG_FILE"
+  chmod 600 "$CONFIG_FILE"
+  log "wrote $CONFIG_FILE"
+  log "host: $HOST"
+  log "user: $USER_NAME"
+  log "port: $PORT"
+  [[ -n "$KEY" ]] && log "key:  $KEY"
+  log "test with: pi-remote.sh status"
+}
+
+case "$COMMAND" in
+  status)   cmd_status ;;
+  update)   cmd_update "$@" ;;
+  provider) cmd_provider "$@" ;;
+  shell)    cmd_shell ;;
+  run)      cmd_run "$@" ;;
+  push)     cmd_push "$@" ;;
+  print)    cmd_print ;;
+  setup)    cmd_setup ;;
+  ""|-h|--help) usage ;;
+  *)        usage >&2; die "Unknown command: $COMMAND" ;;
+esac

@@ -1,6 +1,6 @@
 {
   "name": "pi-tool-backup",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "tool",
   "description": "Backup/restore bundle for pi-mono based agent systems. Excludes node_modules, splits archives >45MB to fit Telegram.",
   "entry": "./pi-backup.sh",
@@ -10,6 +10,7 @@
     "~/pi-system/docs/",
     "~/pi-system/scripts/",
     "~/.pi/agent/settings.json",
+    "~/.pi/models.json",
     "~/.pi/agent/telebridge.json",
     "~/.pi/agent/pi-cron.tab"
   ],

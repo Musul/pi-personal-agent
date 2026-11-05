@@ -23,6 +23,8 @@ deploy.bat
 .pi/agent/telebridge.lock
 .pi/agent/.compact-reminder
 .pi/agent/.last-archive
+.pi/agent/pi-update-state.json
+.pi/agent/settings.json.bak-*
 
 # ─── Node / build ─────────────────────────────────────────
 node_modules/

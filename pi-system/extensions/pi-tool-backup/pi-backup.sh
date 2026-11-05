@@ -87,6 +87,7 @@ case "$MODE" in
     ITEMS+=("pi-system/scripts")
     [[ -f "$HOME_DIR/pi-system/registry.json" ]] && ITEMS+=("pi-system/registry.json")
     [[ -f "$HOME_DIR/.pi/agent/settings.json"  ]] && ITEMS+=(".pi/agent/settings.json")
+    [[ -f "$HOME_DIR/.pi/models.json"          ]] && ITEMS+=(".pi/models.json")
     [[ -f "$HOME_DIR/.pi/agent/telebridge.json" ]] && ITEMS+=(".pi/agent/telebridge.json")
     [[ -f "$HOME_DIR/.pi/agent/pi-cron.tab"    ]] && ITEMS+=(".pi/agent/pi-cron.tab")
     if [[ "$INCLUDE_LOGS" == "true" ]]; then
@@ -97,6 +98,7 @@ case "$MODE" in
     ITEMS+=("workspace")
     ITEMS+=("pi-system")
     ITEMS+=(".pi/agent")
+    [[ -f "$HOME_DIR/.pi/models.json" ]] && ITEMS+=(".pi/models.json")
     ;;
 esac
 

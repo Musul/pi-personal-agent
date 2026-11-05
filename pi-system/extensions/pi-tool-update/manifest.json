@@ -1,0 +1,29 @@
+{
+  "name": "pi-tool-update",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "Universal update command. Updates pi, the agent repo, local extension dependencies and the model catalog, with Termux shebang repair and user-mode handling.",
+  "entry": "./index.ts",
+  "reads": [
+    "~/.pi/agent/settings.json",
+    "~/pi-system/scripts/pi-update.sh",
+    "~/pi-system/registry.json"
+  ],
+  "writes": [
+    "~/.pi/agent/pi-update-state.json",
+    "~/pi-system/logs/system/"
+  ],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "env": [],
+  "system_deps": [
+    "node",
+    "npm",
+    "git"
+  ],
+  "commands": [
+    "/update"
+  ],
+  "user_docs": "~/workspace/AGENTS.md#actualizaciones"
+}

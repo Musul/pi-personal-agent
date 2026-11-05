@@ -20,9 +20,10 @@ workspace/                  user-owned data — agent writes freely here
   tmp/                      scratch (Termux-safe; /tmp is denied)
 pi-system/                  system code (read-only in user mode)
   extensions/               one folder per pluggable extension
-  docs/                     ARCHITECTURE, DEPENDENCIES, developer protocol
+  docs/                     ARCHITECTURE, DEPENDENCIES, REMOTE-TERMUX, developer protocol
   logs/                     backups/, cron/, sessions/{archives,raw}, system/
-  scripts/                  set-mode, gen-deps-map, migrate, sftp-setup
+  config/                   pi-remote.env.example (PC-side template)
+  scripts/                  set-mode, gen-deps-map, migrate, sftp-setup, pi-update, pi-provider, pi-remote
   registry.json             source of truth: enabled extensions + versions
   .mode                     current mode marker (user|dev)
 ```
@@ -42,6 +43,7 @@ Three hard rules:
 | `pi-cron-forked` | scheduler | Local fork of `@e9n/pi-cron` — scheduled agent runs, emits `cron:job_complete` |
 | `pi-tool-archive` | tool | Archive latest session as markdown + HTML; auto-rotate entries >7d |
 | `pi-tool-backup` | tool | Portable backup bundle, excludes `node_modules`, splits >45MB for Telegram |
+| `pi-tool-update` | tool | Universal `/update` + `pi-update` command: pi CLI, repo, extension deps, model catalog, Termux shebang repair |
 | `pi-tool-elevenlabs` | tool | STT/TTS + send voice messages to Telegram |
 | `pi-tool-finanzas` | tool | Personal finance + investment tracking with optional secondary-currency support (FX provider/label/symbol fully configurable via env), DCA helpers |
 | `pi-tool-parse-document` | tool | PDF/DOCX/XLSX/PPTX/image parsing with OCR fallback |
@@ -49,9 +51,49 @@ Three hard rules:
 
 Full machine-readable metadata in each extension's `manifest.json`. Dependency graph in [`pi-system/docs/DEPENDENCIES.md`](pi-system/docs/DEPENDENCIES.md) — auto-generated from manifests.
 
-Default LLM is Kimi/Moonshot (`kimi-k2.6`) via `pi-provider-kimi`. Cron-mode default is `kimi-k2.5`. Both configured in [`.pi/agent/settings.json`](.pi/agent/settings.json).
+Default LLM is Kimi/Moonshot (`kimi-k2.6`) via `pi-provider-kimi`. Cron subprocesses inherit the same `defaultProvider` / `defaultModel`, so scheduled runs use the same model as the interactive agent by default. Both configured in [`.pi/agent/settings.json`](.pi/agent/settings.json).
+
+OpenCode Go is also supported **natively** by pi (provider id `opencode-go`, no extension required). See [OpenCode Go](#opencode-go).
 
 Tavily can be routed through a Cloudflare Worker proxy when the direct API is WAF-blocked from your region — see [`pi-system/extensions/pi-tool-tavily/worker/README.md`](pi-system/extensions/pi-tool-tavily/worker/README.md).
+
+## OpenCode Go
+
+Pi has native support for the [OpenCode Go](https://opencode.ai/go) subscription since `pi-coding-agent` **0.56.0**. No fork, no custom provider, no `models.json` entry is required:
+
+- **Provider id:** `opencode-go`
+- **Endpoint:** per-model under `https://opencode.ai/zen/go` (OpenAI-compatible, Anthropic Messages, Google and Responses APIs; pi ships the right one for each model)
+- **Credential:** `OPENCODE_API_KEY` in the environment, or the `opencode-go` entry in `~/.pi/agent/auth.json` (written by `/login`)
+
+Setup:
+
+```bash
+# Option A — interactive login inside pi
+pi
+/login          # choose OpenCode Go, paste the key
+/model          # pick a Go model
+
+# Option B — keep the key in ~/.env
+echo 'export OPENCODE_API_KEY="sk-..."' >> ~/.env
+source ~/.env
+```
+
+Switch the agent **and cron** to OpenCode Go with one command:
+
+```bash
+bash ~/pi-system/scripts/pi-update.sh                    # ensures pi >= 0.56 + fresh model catalog
+bash ~/pi-system/scripts/pi-provider.sh use opencode-go
+bash ~/pi-system/scripts/pi-provider.sh status
+bash ~/pi-system/scripts/pi-provider.sh verify        # checks key + subscription against /models
+```
+
+The switch is written to `~/.pi/agent/settings.json` (`defaultProvider` / `defaultModel` and the `pi-cron` block). `pi-provider.sh` does not print or store the key. To pin a specific model, pass it as the second argument: `pi-provider.sh use opencode-go kimi-k2.6`. If you already have a Kimi direct key, you can switch back the same way:
+
+```bash
+bash ~/pi-system/scripts/pi-provider.sh use moonshot kimi-k2.6
+```
+
+> **Version note:** OpenCode Go support landed in pi `0.56.0`. The updater enforces a compatible version and refreshes the model catalog with `pi update --models`. Current pi releases need Node >= 22.19; on older Node the updater uses the `legacy-node20` channel automatically.
 
 ## Architecture
 
@@ -107,8 +149,10 @@ Then install the runtime dependencies:
 pkg install nodejs-lts git poppler tesseract curl -y
 ```
 ```bash
-npm install -g @mariozechner/pi-coding-agent
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 ```
+
+> `@mariozechner/pi-coding-agent` is deprecated. Use `@earendil-works/pi-coding-agent`. Current releases require **Node >= 22.19**; on Node 20 use the `legacy-node20` channel (the updater does this automatically).
 
 Install the upstream packages that the local forks (`pi-provider-kimi`, `pi-cron-forked`) seed from. `migrate.sh` copies these into `pi-system/extensions/` and renames them so future `npm update` of the upstream cannot overwrite local changes — but the upstream must exist globally first or the migration will silently skip the fork population:
 
@@ -122,8 +166,11 @@ Clone the repo and move its contents directly into `$HOME`. The agent expects `~
 cd ~
 ```
 ```bash
-git clone https://github.com/Musul/pi-personal-agent.git
+git clone https://github.com/<your-github-user>/pi-personal-agent.git
 ```
+
+Replace `<your-github-user>` with the GitHub account or organization that hosts
+your fork. The rest of the install commands are distribution-agnostic.
 ```bash
 shopt -s dotglob                  # so the move includes .pi/ and .env.example
 ```
@@ -183,9 +230,50 @@ Solid Explorer connection (Android):
 3. Fill in:
    - **Host** — phone LAN IP (Settings → WiFi → IP Address)
    - **Port** — `8022`
-   - **Username** — output of `whoami` in Termux (e.g. `u0_a123`)
+   - **Username** — output of `whoami` in Termux (`<termux-user>`)
    - **Auth** — password
 4. **Remote path**: `/data/data/com.termux/files/home`
+
+### SSH from a PC (remote management)
+
+The same `sshd` that powers SFTP also gives you a shell for updates and provider changes. On the phone:
+
+```bash
+bash ~/pi-system/scripts/sftp-setup.sh --status   # prints IP, user, port and the exact ssh command
+bash ~/pi-system/scripts/sftp-setup.sh --key "ssh-ed25519 AAAA... you@pc"
+```
+
+From the PC:
+
+```bash
+# Option A: let the wrapper write ~/.config/pi/remote.env
+bash pi-system/scripts/pi-remote.sh setup \
+  --host <phone-ip> \
+  --user <termux-user> \
+  --port 8022 \
+  --key ~/.ssh/id_ed25519
+
+# Option B: copy the template and edit the placeholders
+cp pi-system/config/pi-remote.env.example ~/.config/pi/remote.env
+chmod 600 ~/.config/pi/remote.env
+
+bash pi-system/scripts/pi-remote.sh status
+```
+
+`<phone-ip>` is the phone LAN IP or Tailscale IP, and `<termux-user>` is the
+output of `whoami` inside Termux. The wrapper also supports:
+
+```bash
+bash pi-system/scripts/pi-remote.sh update --yes
+bash pi-system/scripts/pi-remote.sh provider use opencode-go
+bash pi-system/scripts/pi-remote.sh push ./AGENTS.user.md '~/workspace/AGENTS.user.md'
+bash pi-system/scripts/pi-remote.sh shell
+```
+
+`pi-remote.sh` is a thin SSH/SCP wrapper: it does not store credentials and
+does not need to run on the phone. Full setup, troubleshooting and the
+white-label checklist are in
+[`pi-system/docs/REMOTE-TERMUX.md`](pi-system/docs/REMOTE-TERMUX.md).
 
 ### First launch — Telegram
 
@@ -234,7 +322,8 @@ One-tap launch from the Android home screen. Termux:Widget itself was installed 
 `pi-cron-forked` runs the agent on a cron schedule and emits `cron:job_complete` so `pi-channel-telegram` forwards results to your phone.
 
 - Schedule file: `~/.pi/agent/pi-cron.tab` (cron syntax + prompt).
-- Autostart, active hours, and the cron-mode model live in `.pi/agent/settings.json` under `pi-cron`.
+- Autostart and active hours live in `.pi/agent/settings.json` under `pi-cron`.
+- Cron subprocesses inherit `defaultProvider` / `defaultModel`; `pi-provider.sh` keeps the `pi-cron.provider` / `pi-cron.model` fields in sync for compatibility, but the effective model comes from the global default.
 - Job logs land in `pi-system/logs/cron/`.
 
 Repo ships with two defaults in [`.pi/agent/pi-cron.tab`](.pi/agent/pi-cron.tab):
@@ -246,16 +335,33 @@ Edit or delete them freely — the file is yours. Manage from inside pi via `/cr
 
 ## Updating pi
 
-When a new `pi-coding-agent` release ships:
+One command updates everything: the pi CLI, the `pi-personal-agent` checkout (only when clean), local extension dependencies, and the model catalog (including OpenCode Go models). It also repairs the Termux shebang after npm rewrites it.
 
 ```bash
-/quit                              # inside pi, if running
-npm update -g @mariozechner/pi-coding-agent
-pkg install which -y
-termux-fix-shebang $(which pi)
+pi-update                # full update
+pi-update --check        # read-only summary
+pi-update --self         # pi CLI only
+pi-update --models       # model catalog only
+pi-update --rollback     # reinstall the version recorded before the last update
 ```
 
-The `termux-fix-shebang` step is required after every `npm update` — npm rewrites the bin shim with a non-Termux shebang and the widget won't launch until it's patched.
+From inside pi:
+
+```text
+/update
+/update check
+/update models
+```
+
+If the `pi-update` shim is missing (first install, or after restoring a backup):
+
+```bash
+bash ~/pi-system/scripts/pi-update.sh
+# then, on Termux:
+ln -sfn ~/pi-system/scripts/pi-update.sh "$PREFIX/bin/pi-update"
+```
+
+The updater handles user mode automatically: it temporarily switches `pi-system/` to dev mode, updates, and restores user mode on exit. Local tracked changes in the repo are never clobbered — `git pull` is skipped when the checkout is dirty. Logs land in `pi-system/logs/system/`, and the previous pi version is stored in `~/.pi/agent/pi-update-state.json` for `--rollback`.
 
 ## Backup & transfer to another device
 
@@ -271,7 +377,7 @@ bash ~/pi-system/extensions/pi-tool-backup/restore.sh <bundle.tar.gz> --install-
 
 | Flag | Effect |
 |---|---|
-| `--transfer` (default) | Portable bundle: workspace + extensions + docs + scripts + minimal `.pi/agent` config. Excludes `node_modules`, `.git`, logs, tmp. |
+| `--transfer` (default) | Portable bundle: workspace + extensions + docs + scripts + minimal `.pi` config (settings, `models.json`, cron, telebridge). Excludes `node_modules`, `.git`, logs, tmp. |
 | `--full` | Everything including `pi-system/logs/`. Never auto-sent. |
 | `--local-only` | Same as `--transfer` but skips Telegram. |
 | `--include-env` | Pull `~/.env` into the bundle. Off by default. Only enable if destination is fully trusted. |

@@ -47,7 +47,7 @@ elif $APPLY; then
 fi
 
 say "Ensuring pi-system/ skeleton"
-run "mkdir -p $SYS/extensions/{pi-channel-telegram,pi-tool-tavily,pi-tool-elevenlabs,pi-tool-archive,pi-tool-parse-document,pi-tool-finanzas,pi-tool-backup,pi-provider-kimi,pi-cron-forked,_archive}"
+run "mkdir -p $SYS/extensions/{pi-channel-telegram,pi-tool-tavily,pi-tool-elevenlabs,pi-tool-archive,pi-tool-parse-document,pi-tool-finanzas,pi-tool-backup,pi-tool-update,pi-provider-kimi,pi-cron-forked,_archive}"
 run "mkdir -p $SYS/logs/{cron,sessions/archives,sessions/raw,backups,system}"
 run "mkdir -p $SYS/docs/{extensions,developer}"
 run "mkdir -p $SYS/scripts"
@@ -188,6 +188,19 @@ else
   for d in "$SYS"/extensions/*/; do
     [[ -f "$d/package.json" ]] && echo "  (dry) npm install in $d"
   done
+fi
+
+# ─── Universal update command ──────────────────────────────────────────
+say "Installing pi-update command"
+if [[ -n "${PREFIX:-}" && "$PREFIX" == *com.termux* ]]; then
+  if [[ -f "$SYS/scripts/pi-update.sh" ]]; then
+    run "ln -sfn $SYS/scripts/pi-update.sh $PREFIX/bin/pi-update"
+    run "chmod +x $SYS/scripts/pi-update.sh $SYS/scripts/pi-provider.sh $SYS/scripts/pi-remote.sh 2>/dev/null || true"
+  else
+    echo "  (skip) pi-update.sh not present in this checkout"
+  fi
+else
+  echo "  (skip) not Termux; run updates with: bash $SYS/scripts/pi-update.sh"
 fi
 
 # ─── Final sanity ──────────────────────────────────────────────────────

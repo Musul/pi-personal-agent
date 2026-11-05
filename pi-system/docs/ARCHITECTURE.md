@@ -24,6 +24,7 @@ pi-system/
 │   ├── pi-cron-forked/           Scheduler fork
 │   ├── pi-tool-archive/          Session archiving
 │   ├── pi-tool-backup/           Backup + restore
+│   ├── pi-tool-update/           Universal /update command
 │   ├── pi-tool-elevenlabs/       STT/TTS
 │   ├── pi-tool-finanzas/         Finance + investments
 │   ├── pi-tool-parse-document/   PDF/DOCX/XLSX/images
@@ -32,9 +33,12 @@ pi-system/
 ├── docs/
 │   ├── ARCHITECTURE.md           This file
 │   ├── DEPENDENCIES.md           Auto-generated from manifests
+│   ├── REMOTE-TERMUX.md          PC-to-phone SSH setup, troubleshooting, security
 │   ├── developer/
 │   │   └── DEVELOPER-PROTOCOL.md Rules when modifying the system
 │   └── extensions/               One doc per extension (optional)
+├── config/
+│   └── pi-remote.env.example     PC-side SSH config template (no secrets)
 ├── logs/
 │   ├── backups/                  Retained backup archives
 │   ├── cron/                     pi-cron-forked job logs
@@ -44,7 +48,10 @@ pi-system/
 │   └── system/                   errors, extension logs
 ├── scripts/
 │   ├── gen-deps-map.js           Regenerate DEPENDENCIES.md from manifests
-│   └── set-mode.sh               Switch user/dev mode, toggle chmod + symlink
+│   ├── set-mode.sh               Switch user/dev mode, toggle chmod + symlink
+│   ├── pi-update.sh              Universal updater (pi, repo, deps, models)
+│   ├── pi-provider.sh            Switch native providers (incl. opencode-go)
+│   └── pi-remote.sh              SSH client wrapper for a Termux phone
 ├── registry.json                 Source of truth: enabled extensions + versions
 └── .mode                         Current mode (user|dev), written by set-mode.sh
 ```

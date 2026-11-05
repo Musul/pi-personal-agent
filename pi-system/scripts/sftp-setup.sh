@@ -5,6 +5,9 @@
 # Usage:
 #   bash ~/pi-system/scripts/sftp-setup.sh            # install + configure + start sshd, print connection info
 #   bash ~/pi-system/scripts/sftp-setup.sh --keys     # also install your public key from ~/.ssh/authorized_keys.in
+#   bash ~/pi-system/scripts/sftp-setup.sh --key "ssh-ed25519 AAAA... user@pc"
+#                                                     # append a public key directly
+#   bash ~/pi-system/scripts/sftp-setup.sh --json     # machine-readable connection info (for pi-remote.sh)
 #   bash ~/pi-system/scripts/sftp-setup.sh --enable   # autostart sshd on Termux launch (termux-services)
 #   bash ~/pi-system/scripts/sftp-setup.sh --status   # show port, user, IP, running state
 #   bash ~/pi-system/scripts/sftp-setup.sh --stop     # stop sshd
@@ -57,7 +60,18 @@ print_status() {
   LAN IP       : ${ip:-<none — Wi-Fi off?>}
   workspace    : $HOME/workspace
 
+  SSH command  : ssh -p $PORT $user@${ip:-<phone-IP>}
+
 EOF
+}
+
+print_json() {
+  local user ip running
+  user="$(whoami)"
+  ip="$(get_ip || echo '')"
+  if pgrep -x sshd >/dev/null 2>&1; then running=true; else running=false; fi
+  printf '{"host":"%s","port":%s,"user":"%s","workspace":"%s","sshd":%s}\n' \
+    "$ip" "$PORT" "$user" "$HOME/workspace" "$running"
 }
 
 print_solid_explorer_steps() {
@@ -120,6 +134,22 @@ cmd_keys() {
   log "Installed key(s). authorized_keys now has $(wc -l < "$AUTH_KEYS") line(s)."
 }
 
+cmd_key() {
+  local key="${1:-}"
+  [[ -n "$key" ]] || { err "Usage: sftp-setup.sh --key \"ssh-ed25519 AAAA... user@pc\""; exit 2; }
+  case "$key" in
+    ssh-*|ecdsa-*|sk-*) ;;
+    *) err "That does not look like a public key (expected ssh-ed25519 / ssh-rsa / ecdsa-...)."; exit 2 ;;
+  esac
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+  touch "$AUTH_KEYS"
+  printf '%s\n' "$key" >> "$AUTH_KEYS"
+  sort -u "$AUTH_KEYS" -o "$AUTH_KEYS"
+  chmod 600 "$AUTH_KEYS"
+  log "Installed public key. authorized_keys now has $(wc -l < "$AUTH_KEYS") line(s)."
+}
+
 cmd_enable() {
   ensure_pkg termux-services sv
   mkdir -p "$HOME/.termux/boot" 2>/dev/null || true
@@ -139,6 +169,8 @@ cmd_stop() {
 case "${1:-install}" in
   install|"")  cmd_install ;;
   --keys)      cmd_keys ;;
+  --key)       shift; cmd_key "${1:-}" ;;
+  --json)      print_json ;;
   --enable)    cmd_enable ;;
   --status)    print_status ;;
   --stop)      cmd_stop ;;

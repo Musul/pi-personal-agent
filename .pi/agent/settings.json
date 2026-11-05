@@ -3,7 +3,8 @@
     "/data/data/com.termux/files/home/pi-system/extensions/pi-provider-kimi",
     "/data/data/com.termux/files/home/pi-system/extensions/pi-cron-forked",
     "/data/data/com.termux/files/home/pi-system/extensions/pi-channel-telegram",
-    "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-parse-document"
+    "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-parse-document",
+    "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-update"
   ],
   "pi-cron": {
     "autostart": true,
@@ -14,7 +15,7 @@
       "/data/data/com.termux/files/home/pi-system/extensions/pi-provider-kimi/extensions/index.ts"
     ],
     "provider": "moonshot",
-    "model": "kimi-k2.5"
+    "model": "kimi-k2.6"
   },
   "lastChangelogVersion": "0.67.6",
   "defaultProvider": "moonshot",

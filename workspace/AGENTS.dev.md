@@ -125,6 +125,29 @@ bash ~/pi-system/extensions/pi-tool-backup/restore.sh <archivo.tar.gz> --install
 
 Incluye `workspace/`, `pi-system/extensions/`, `pi-system/docs/`, `pi-system/scripts/`, configs mínimos de `~/.pi/agent/`. Excluye `node_modules`, logs, tmp. Se parte en trozos de 45MB para Telegram. Requiere `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`. Si hay datos sensibles confirmo antes de enviar. No espontáneo más de 1x/hora salvo pedido.
 
+### Actualizaciones
+
+```bash
+pi-update --check     # read-only: qué cambiaría
+pi-update             # actualiza pi CLI + repo + deps + catálogo de modelos
+```
+
+Si el comando todavía no existe en el PATH: `bash ~/pi-system/scripts/pi-update.sh` (la primera corrida lo instala como `pi-update`).
+
+Dentro de pi, el usuario tiene `/update` (o `/update check`). El updater repara el shebang de Termux, respeta cambios locales del repo y restaura el modo user si estaba activo. En dev puedo correr `pi-update` cuando el owner lo pida; nunca lo hago solo. Después de actualizar, el usuario reinicia pi.
+
+### Proveedor / modelo
+
+OpenCode Go es un provider nativo de pi (`opencode-go`, sin extensión). El usuario cambia con:
+
+```bash
+bash ~/pi-system/scripts/pi-provider.sh status
+bash ~/pi-system/scripts/pi-provider.sh use opencode-go
+bash ~/pi-system/scripts/pi-provider.sh verify
+```
+
+`use` sincroniza también `pi-cron`. Los jobs de cron heredan `defaultProvider`/`defaultModel`, así que usan el mismo modelo que el agente principal. La key vive en `~/.env` (`OPENCODE_API_KEY`) o en `~/.pi/agent/auth.json`; nunca la imprimo ni la pego en el chat. Si el owner pide cambiar de proveedor, actualizo ambos bloques (agente y cron) con el script, no a mano.
+
 ### Archivo de Sesiones
 
 ```bash
