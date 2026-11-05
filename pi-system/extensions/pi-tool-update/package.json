@@ -1,6 +1,6 @@
 {
   "name": "pi-tool-update",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal /update command for the Pi personal agent: pi CLI, repo, extension deps and model catalog.",
   "type": "module",
   "keywords": [

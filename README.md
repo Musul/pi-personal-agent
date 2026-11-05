@@ -363,7 +363,7 @@ bash ~/pi-system/scripts/pi-update.sh
 ln -sfn ~/pi-system/scripts/pi-update.sh "$PREFIX/bin/pi-update"
 ```
 
-The updater handles user mode automatically: it temporarily switches `pi-system/` to dev mode, updates, and restores user mode on exit. Local tracked changes in the repo are never clobbered — `git pull` is skipped when the checkout is dirty. Logs land in `pi-system/logs/system/`, and the previous pi version is stored in `~/.pi/agent/pi-update-state.json` for `--rollback`.
+The updater handles user mode automatically: it temporarily switches `pi-system/` to dev mode, updates, and restores user mode on exit. Local tracked changes are never clobbered: `git pull` runs with `--autostash`, so the update is applied and the changes are restored afterwards. If the autostash conflicts, the updater rolls back to the previous commit, leaves the local changes intact, and tells you how to resolve it. Use `--no-autostash` to keep the old skip-when-dirty behavior. Logs land in `pi-system/logs/system/`, and the previous pi version is stored in `~/.pi/agent/pi-update-state.json` for `--rollback`.
 
 ## Backup & transfer to another device
 

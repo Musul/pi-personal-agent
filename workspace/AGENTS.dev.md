@@ -134,7 +134,7 @@ pi-update             # actualiza pi CLI + repo + deps + catálogo de modelos
 
 Si el comando todavía no existe en el PATH: `bash ~/pi-system/scripts/pi-update.sh` (la primera corrida lo instala como `pi-update`).
 
-Dentro de pi, el usuario tiene `/update` (o `/update check`). El updater repara el shebang de Termux, respeta cambios locales del repo y restaura el modo user si estaba activo. En dev puedo correr `pi-update` cuando el owner lo pida; nunca lo hago solo. Después de actualizar, el usuario reinicia pi.
+Dentro de pi, el usuario tiene `/update` (o `/update check`). El updater repara el shebang de Termux, hace autostash de los cambios locales del repo y los restaura después del `git pull`; si hay conflicto, vuelve al commit anterior sin dejar marcadores. También restaura el modo user si estaba activo. En dev puedo correr `pi-update` cuando el owner lo pida; nunca lo hago solo. Después de actualizar, el usuario reinicia pi.
 
 ### Proveedor / modelo
 

@@ -1,6 +1,6 @@
 {
   "name": "pi-tool-update",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "tool",
   "description": "Universal update command. Updates pi, the agent repo, local extension dependencies and the model catalog, with Termux shebang repair and user-mode handling.",
   "entry": "./index.ts",

@@ -2,7 +2,7 @@
 # pi-update.sh - universal updater for the Pi personal agent.
 #
 # Updates, in order:
-#   1. the pi-personal-agent git checkout (if it is a clean git repo)
+#   1. the pi-personal-agent git checkout (autostashing local tracked changes)
 #   2. the pi CLI itself (npm, with Termux shebang repair)
 #   3. dependencies of the local extensions in ~/pi-system/extensions
 #   4. the model catalog (OpenCode Go / Zen models included)
@@ -24,6 +24,7 @@
 #   --extensions / --no-extensions
 #   --models / --no-models
 #   --all                         same as the default (all four)
+#   --autostash / --no-autostash  preserve local tracked changes around git pull (default: autostash)
 #   --channel auto|latest|legacy  auto picks legacy-node20 when Node < 22.19
 #   --version <x.y.z>             pin pi version
 #   --force                       reinstall even when already up to date
@@ -62,6 +63,7 @@ DRY=0
 ASSUME_YES=0
 FORCE=0
 MODE_SWITCH=1
+AUTOSTASH=1
 JSON=0
 ROLLBACK=0
 CHANNEL="auto"
@@ -71,7 +73,9 @@ TAG="latest"
 ORIGINAL_MODE=""
 REPO_ROOT=""
 REPO_BEFORE=""
+REPO_BEFORE_FULL=""
 REPO_AFTER=""
+REPO_FAILED=0
 OLD_VERSION=""
 OLD_PACKAGE=""
 NEW_VERSION=""
@@ -84,7 +88,7 @@ warn() { printf '  ! %s\n' "$*" >&2; }
 die()  { printf '\nERROR: %s\n' "$*" >&2; STATUS="error"; exit 1; }
 
 usage() {
-  sed -n '2,38p' "$SELF_REAL" | sed 's/^# \{0,1\}//'
+  sed -n '2,39p' "$SELF_REAL" | sed 's/^# \{0,1\}//'
 }
 
 # ── Output / logging ────────────────────────────────────────────────────
@@ -146,6 +150,8 @@ while (( $# )); do
     --models)          DO_MODELS=1; DO_SELF=0; DO_REPO=0; DO_EXT=0 ;;
     --no-models)       DO_MODELS=0 ;;
     --all)             DO_SELF=1; DO_REPO=1; DO_EXT=1; DO_MODELS=1 ;;
+    --autostash)       AUTOSTASH=1 ;;
+    --no-autostash)    AUTOSTASH=0 ;;
     --channel)         CHANNEL="${2:-}"; shift; [[ -n "$CHANNEL" ]] || die "--channel needs a value" ;;
     --version)         PIN="${2:-}"; shift; [[ -n "$PIN" ]] || die "--version needs a value" ;;
     --no-mode-switch)  MODE_SWITCH=0 ;;
@@ -391,23 +397,65 @@ if (( DO_REPO )); then
   say "Repository"
   if REPO_ROOT="$(find_repo_root)"; then
     REPO_BEFORE="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)"
+    REPO_BEFORE_FULL="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
     log "repo: $REPO_ROOT ($REPO_BEFORE)"
+
+    DIRTY=0
     if [[ -n "$(git -C "$REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
-      warn "Repo has local tracked changes; skipping git pull to avoid clobbering them."
+      DIRTY=1
+    fi
+
+    if (( DIRTY && ! AUTOSTASH )); then
+      warn "Repo has local tracked changes; skipping git pull (--no-autostash)."
       SUMMARY+=("repo: skipped (dirty)")
-    else
-      if (( DRY )); then
-        log "(check) git -C $REPO_ROOT pull --ff-only --no-rebase"
+    elif (( DRY )); then
+      if (( DIRTY )); then
+        log "(check) local tracked changes; would autostash them and git pull --ff-only"
       else
-        ensure_writable_mode
-        log "$ git -C $REPO_ROOT pull --ff-only --no-rebase"
-        if git -C "$REPO_ROOT" pull --ff-only --no-rebase; then
-          REPO_AFTER="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)"
-          SUMMARY+=("repo: ${REPO_BEFORE:-?} -> ${REPO_AFTER:-?}")
+        log "(check) git -C $REPO_ROOT pull --ff-only --no-rebase"
+      fi
+    else
+      ensure_writable_mode
+      if (( DIRTY )); then
+        log "Local tracked changes detected; preserving them with autostash."
+      fi
+      log "$ git -C $REPO_ROOT pull --ff-only --no-rebase --autostash"
+
+      PULL_OK=0
+      if git -C "$REPO_ROOT" pull --ff-only --no-rebase --autostash; then
+        PULL_OK=1
+      fi
+
+      # `git pull --autostash` exits 0 even when reapplying the stash leaves
+      # conflicts. Detect that and roll back to the exact pre-pull commit,
+      # restoring the local changes. No conflict markers are left behind.
+      if [[ -n "$(git -C "$REPO_ROOT" ls-files -u 2>/dev/null)" ]]; then
+        warn "Autostash reapplied with conflicts; rolling back to $REPO_BEFORE."
+        if [[ -n "$REPO_BEFORE_FULL" ]] \
+          && git -C "$REPO_ROOT" reset --hard "$REPO_BEFORE_FULL" >/dev/null 2>&1 \
+          && git -C "$REPO_ROOT" stash pop >/dev/null 2>&1; then
+          warn "Rolled back cleanly. Local changes are intact; reconcile the overlapping files manually:"
+          warn "  bash $SYS_DIR/scripts/set-mode.sh dev"
+          warn "  git -C $REPO_ROOT status"
+          warn "  git -C $REPO_ROOT diff HEAD origin/main"
+          warn "Then run pi-update again."
         else
-          warn "git pull failed; continuing with the current checkout."
-          SUMMARY+=("repo: pull failed")
+          warn "Rollback or stash restore failed. Inspect: git -C $REPO_ROOT stash list"
+          warn "Switch to dev mode to resolve: bash $SYS_DIR/scripts/set-mode.sh dev"
         fi
+        REPO_FAILED=1
+        SUMMARY+=("repo: conflict; rolled back")
+      elif (( PULL_OK )); then
+        REPO_AFTER="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)"
+        if (( DIRTY )); then
+          SUMMARY+=("repo: ${REPO_BEFORE:-?} -> ${REPO_AFTER:-?} (local changes preserved)")
+        else
+          SUMMARY+=("repo: ${REPO_BEFORE:-?} -> ${REPO_AFTER:-?}")
+        fi
+      else
+        warn "git pull failed; continuing with the current checkout."
+        REPO_FAILED=1
+        SUMMARY+=("repo: pull failed")
       fi
     fi
   else
@@ -548,6 +596,13 @@ if (( DO_MODELS )); then
 fi
 
 # ── Final state ─────────────────────────────────────────────────────────
+if (( REPO_FAILED )); then
+  if [[ "$STATUS" == "ok" || "$STATUS" == "rollback" ]]; then
+    STATUS="error"
+  fi
+  warn "Repository update failed; local changes are preserved in the working tree or stash."
+fi
+
 if [[ "$STATUS" == "ok" || "$STATUS" == "rollback" ]] && [[ -n "$NEW_VERSION" ]]; then
   write_state "$STATUS" || warn "Could not write $STATE_FILE (update itself succeeded)."
 fi

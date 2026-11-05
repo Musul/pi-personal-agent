@@ -67,6 +67,14 @@ function parseArgs(raw: string): { args: string[]; error?: string } {
       case "force":
         args.push("--force");
         break;
+      case "--autostash":
+      case "autostash":
+        args.push("--autostash");
+        break;
+      case "--no-autostash":
+      case "no-autostash":
+        args.push("--no-autostash");
+        break;
       case "--yes":
       case "-y":
         // The command already asked for confirmation.
@@ -91,7 +99,7 @@ export default function (pi: any) {
       const parsed = parseArgs(rawArgs ?? "");
       if (parsed.error) {
         ctx.ui.notify(
-          `${parsed.error}\nUsage: /update [check|models|self|extensions|repo|all] [--force]`,
+          `${parsed.error}\nUsage: /update [check|models|self|extensions|repo|all] [--force] [--no-autostash]`,
           "warning",
         );
         return;
@@ -122,7 +130,7 @@ export default function (pi: any) {
             : [
                 "This updates:",
                 "  - the pi CLI (Termux shebang is repaired automatically)",
-                "  - the pi-personal-agent git checkout (only if clean)",
+                "  - the pi-personal-agent git checkout (local changes are autostashed and restored)",
                 "  - local extension dependencies",
                 "  - the model catalog (OpenCode Go included)",
                 "",
