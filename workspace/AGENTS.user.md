@@ -156,6 +156,21 @@ node ~/pi-system/extensions/pi-tool-archive/archive-session.js
 
 Si el usuario dice "archiva esta sesión": toma la `.jsonl` más reciente, filtra últimas 24h, guarda en `~/workspace/memory/YYYY-MM-DD.md` + `.html`. Entradas >7 días se auto-rotan a `~/pi-system/logs/sessions/archives/`.
 
+### Costos de IA
+
+```bash
+node ~/pi-system/extensions/pi-tool-costos/costos.js hoy
+node ~/pi-system/extensions/pi-tool-costos/costos.js semana
+node ~/pi-system/extensions/pi-tool-costos/costos.js mes
+node ~/pi-system/extensions/pi-tool-costos/costos.js todo
+node ~/pi-system/extensions/pi-tool-costos/costos.js detalle --dias 30
+node ~/pi-system/extensions/pi-tool-costos/costos.js todo --telegram
+```
+
+Dentro de pi: `/costos`, `/costos mes`, `/costos detalle --dias 30`.
+
+El ledger vive en `~/workspace/costos/ledger.jsonl` y se alimenta del `usage`/`cost` de `~/.pi/agent/sessions/` (incluye cron). Es append-only y deduplicado: no lo edito a mano. Si el usuario pregunta cuánto gastó en IA, corro `/costos` o el CLI; **no** lo registro en `finanzas.js` (son sistemas separados). Los costos son estimados del catálogo de pi; con suscripción (Kimi Coding / OpenCode Go) el reporte marca costo nominal, no gasto real. `rebuild` reconstruye desde cero y deja backup.
+
 ## 6. Estilo
 
 - Idioma: el que use el usuario.

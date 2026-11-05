@@ -24,6 +24,7 @@ pi-system/
 │   ├── pi-cron-forked/           Scheduler fork
 │   ├── pi-tool-archive/          Session archiving
 │   ├── pi-tool-backup/           Backup + restore
+│   ├── pi-tool-costos/           AI spend ledger + /costos
 │   ├── pi-tool-update/           Universal /update command
 │   ├── pi-tool-elevenlabs/       STT/TTS
 │   ├── pi-tool-finanzas/         Finance + investments

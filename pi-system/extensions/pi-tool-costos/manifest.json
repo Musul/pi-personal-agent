@@ -1,0 +1,37 @@
+{
+  "name": "pi-tool-costos",
+  "version": "1.0.0",
+  "type": "tool",
+  "description": "AI spend tracking: aggregates token/cost usage from pi session JSONL into a deduplicated local ledger, with /costos reports and optional Telegram delivery.",
+  "entry": "./index.ts",
+  "entries": [
+    "./index.ts",
+    "./costos.js"
+  ],
+  "reads": [
+    "~/.pi/agent/sessions/",
+    "~/.pi/agent/telebridge.json"
+  ],
+  "writes": [
+    "~/workspace/costos/"
+  ],
+  "consumes_events": [],
+  "emits_events": [],
+  "depends_on": [],
+  "env": [
+    "COSTOS_DATA_DIR",
+    "COSTOS_SESSIONS_DIR",
+    "COSTOS_TZ",
+    "PI_CODING_AGENT_SESSION_DIR",
+    "PI_LOCALE",
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID"
+  ],
+  "commands": [
+    "/costos"
+  ],
+  "cli": {
+    "costos": "node ~/pi-system/extensions/pi-tool-costos/costos.js <hoy|ayer|semana|mes|mes-anterior|todo|detalle|sync|rebuild> [opciones]"
+  },
+  "user_docs": "~/workspace/AGENTS.md#costos-de-ia"
+}

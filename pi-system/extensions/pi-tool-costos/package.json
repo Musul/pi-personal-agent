@@ -1,0 +1,24 @@
+{
+  "name": "pi-tool-costos",
+  "version": "1.0.0",
+  "description": "AI spend ledger for pi: session usage/cost aggregation, /costos command, optional Telegram reports.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi-tool",
+    "cost",
+    "usage"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "bin": {
+    "pi-costos": "./costos.js"
+  },
+  "scripts": {
+    "check": "node ./costos.js --help"
+  }
+}

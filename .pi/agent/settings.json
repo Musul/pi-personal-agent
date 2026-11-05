@@ -4,7 +4,8 @@
     "/data/data/com.termux/files/home/pi-system/extensions/pi-cron-forked",
     "/data/data/com.termux/files/home/pi-system/extensions/pi-channel-telegram",
     "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-parse-document",
-    "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-update"
+    "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-update",
+    "/data/data/com.termux/files/home/pi-system/extensions/pi-tool-costos"
   ],
   "pi-cron": {
     "autostart": true,

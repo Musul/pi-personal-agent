@@ -17,6 +17,7 @@ workspace/                  user-owned data — agent writes freely here
   TAREAS.md                 autonomous task list, read on every session
   memory/                   session archives (md + html)
   finanzas/                 transactions, loans, investments (CSV/JSON)
+  costos/                   AI spend ledger (usage/cost from sessions)
   tmp/                      scratch (Termux-safe; /tmp is denied)
 pi-system/                  system code (read-only in user mode)
   extensions/               one folder per pluggable extension
@@ -42,6 +43,7 @@ Three hard rules:
 | `pi-provider-kimi` | provider | Local fork of `kimicodeprovider` — LLM provider for Kimi/Moonshot |
 | `pi-cron-forked` | scheduler | Local fork of `@e9n/pi-cron` — scheduled agent runs, emits `cron:job_complete` |
 | `pi-tool-archive` | tool | Archive latest session as markdown + HTML; auto-rotate entries >7d |
+| `pi-tool-costos` | tool | AI spend ledger from session usage/cost; `/costos` reports, optional Telegram |
 | `pi-tool-backup` | tool | Portable backup bundle, excludes `node_modules`, splits >45MB for Telegram |
 | `pi-tool-update` | tool | Universal `/update` + `pi-update` command: pi CLI, repo, extension deps, model catalog, Termux shebang repair |
 | `pi-tool-elevenlabs` | tool | STT/TTS + send voice messages to Telegram |
