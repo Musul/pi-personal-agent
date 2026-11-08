@@ -145,6 +145,20 @@ The phone has no non-loopback IPv4 address. Turn on Wi-Fi and join the same
 network as the PC, use Tailscale on both devices, or enable USB tethering.
 A carrier/mobile-data address is not reachable from the PC.
 
+### SSH connects but the banner times out
+
+Android Doze froze Termux. The TCP port still accepts connections (the kernel
+finishes the handshake), but `sshd` never gets scheduled and never sends its
+banner. On the phone, open Termux and run:
+
+```bash
+termux-wake-lock
+```
+
+Keep the screen on during long remote installs, and set Settings → Apps →
+Termux → Battery → **Unrestricted**. Otherwise the same freeze returns as soon
+as the screen turns off.
+
 ### TCP connects but SSH resets before the banner
 
 Typical causes: a VPN/AdGuard-style local VPN on the phone, a firewall, or a

@@ -139,6 +139,8 @@ Settings → **Apps** → **Termux** → **Battery** → set to **Unrestricted**
 
 ### 2. Base packages
 
+Budget about **3 GB free** in Termux's home. A full install (CLI + global forks + extension `node_modules`) uses roughly 1.5 GB, plus room for sessions and backups.
+
 First, update Termux's package index and upgrade installed packages. You'll be prompted a few times during the upgrade (config file overwrites, service restarts) — accept each one with **Y** + Enter:
 
 ```bash
@@ -148,13 +150,44 @@ apt update && apt full-upgrade
 Then install the runtime dependencies:
 
 ```bash
-pkg install nodejs-lts git poppler tesseract curl -y
+pkg install nodejs git poppler tesseract curl -y
 ```
 ```bash
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 ```
 
 > `@mariozechner/pi-coding-agent` is deprecated. Use `@earendil-works/pi-coding-agent`. Current releases require **Node >= 22.19**; on Node 20 use the `legacy-node20` channel (the updater does this automatically).
+
+#### If `node -v` fails with `libicui18n.so.78`
+
+Termux sometimes publishes `node` / `nodejs-lts` built against the previous ICU
+while `libicu` has already moved to the next soname. `npm` then fails before it
+even starts:
+
+```text
+CANNOT LINK EXECUTABLE "node": library "libicui18n.so.78" not found
+```
+
+Pin `libicu` to the version Node was built against (78.3 at the time of writing)
+and verify:
+
+```bash
+apt-get install -y --allow-downgrades libicu=78.3
+apt-mark hold libicu
+hash -r
+node -v
+```
+
+The hold keeps `pkg upgrade` from re-breaking Node. Once Termux rebuilds Node
+against the new ICU, lift the hold and upgrade:
+
+```bash
+apt-mark unhold libicu
+pkg upgrade
+```
+
+If `78.3` is no longer in the repo, list what is available with
+`apt-cache madison libicu` and pin the older entry.
 
 Install the upstream packages that the local forks (`pi-provider-kimi`, `pi-cron-forked`) seed from. `migrate.sh` copies these into `pi-system/extensions/` and renames them so future `npm update` of the upstream cannot overwrite local changes — but the upstream must exist globally first or the migration will silently skip the fork population:
 
@@ -193,6 +226,28 @@ bash ~/pi-system/scripts/migrate.sh           # dry run
 bash ~/pi-system/scripts/migrate.sh --apply   # execute
 ```
 
+Verify the toolchain and that every extension loads:
+
+```bash
+node -v
+npm -v
+pi --version
+pi list
+pi --help >/dev/null && echo "extensions OK"
+```
+
+`pi --help` loads all extensions; if one fails, it prints the failing path and
+the missing module before the help text.
+
+> **npm 12+** blocks `git:` dependencies by default. `migrate.sh` passes
+> `--allow-git=all` automatically on npm >= 12. If an older checkout reports
+> `EALLOWGIT` while installing `pi-tool-parse-document`, run:
+>
+> ```bash
+> (cd ~/pi-system/extensions/pi-tool-parse-document && \
+>   npm install --omit=dev --no-audit --no-fund --allow-git=all)
+> ```
+
 Pick the agent mode. **user** locks `pi-system/` read-only and points `AGENTS.md` at the customer persona; **dev** unlocks the system and switches to the developer protocol. The migration script already left you in **dev** — run this only if you want **user** mode for a customer-ready install:
 
 ```bash
@@ -208,6 +263,14 @@ cp .env.example ~/.env && echo 'source ~/.env' >> ~/.bashrc
 ```
 
 Required keys: `MOONSHOT_API_KEY`, `TAVILY_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ELEVENLABS_API_KEY`. Optional: `TAVILY_PROXY_URL` (Cloudflare Worker), `PI_BACKUP_INCLUDE_ENV`, `PI_BACKUP_MAX_MB`, `FX_*` (locale/currency), `FINANZAS_DATA_DIR`. Full reference + comments in [`.env.example`](.env.example).
+
+Replace every placeholder before the first run. A fake Telegram token makes the
+channel extension retry `getUpdates` and log errors; an empty provider key makes
+`pi` fail at the first prompt. Validate credentials without starting a session:
+
+```bash
+pi auth check --provider moonshot        # or: --provider opencode-go
+```
 
 ## SFTP from your phone (Solid Explorer)
 

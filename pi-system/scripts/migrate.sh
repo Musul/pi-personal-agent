@@ -177,11 +177,21 @@ fi
 
 # ─── Install extension deps (opt) ──────────────────────────────────────
 say "Installing node_modules for extensions that have package.json"
+
+# npm >= 12 refuses git: dependencies unless explicitly allowed. Some extension
+# trees (pi-tool-parse-document -> pptx-text-parser -> sax@github:isaacs/sax-js)
+# still use them, so opt in when the running npm supports the flag.
+NPM_MAJOR="$(npm -v 2>/dev/null | cut -d. -f1)"
+NPM_GIT_FLAG=()
+if [[ "${NPM_MAJOR:-0}" =~ ^[0-9]+$ ]] && (( NPM_MAJOR >= 12 )); then
+  NPM_GIT_FLAG=(--allow-git=all)
+fi
+
 if $APPLY; then
   for d in "$SYS"/extensions/*/; do
     if [[ -f "$d/package.json" ]]; then
       echo "  npm install in $d"
-      (cd "$d" && npm install --omit=dev --no-audit --no-fund) || echo "    (failed, continue)"
+      (cd "$d" && npm install --omit=dev --no-audit --no-fund "${NPM_GIT_FLAG[@]}") || echo "    (failed, continue)"
     fi
   done
 else
