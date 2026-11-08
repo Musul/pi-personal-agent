@@ -384,7 +384,7 @@ One-tap launch from the Android home screen. Termux:Widget itself was installed 
    export PATH="${PREFIX:-/data/data/com.termux/files/usr}/bin:$PATH"
    source "$HOME/.env"
    termux-wake-lock
-   sshd
+   sshd 2>/dev/null || true
    cd "$PI_WORKSPACE" || cd "$HOME/workspace" || exit 1
    exec "${PREFIX:-/data/data/com.termux/files/usr}/bin/pi"
    EOF
