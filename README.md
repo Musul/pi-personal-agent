@@ -275,6 +275,38 @@ channel extension retry `getUpdates` and log errors; an empty provider key makes
 pi auth check --provider moonshot        # or: --provider opencode-go
 ```
 
+### Home-screen widget (Termux:Widget)
+
+Termux:Widget lives in F-Droid and launches the scripts in `~/.shortcuts/`. It
+shares Termux's UID, so it can read them directly. Enable external commands,
+patch `pi`'s shebang (Termux:Widget cannot use `#!/usr/bin/env node`), and
+create the shortcut:
+
+```bash
+echo 'allow-external-apps=true' >> ~/.termux/termux.properties
+termux-reload-settings
+pkg install which -y
+termux-fix-shebang "$(command -v pi)"
+mkdir -p ~/.shortcuts
+```
+
+```bash
+cat > ~/.shortcuts/pi.sh <<'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+export PATH="${PREFIX:-/data/data/com.termux/files/usr}/bin:$PATH"
+source "$HOME/.env"
+termux-wake-lock
+cd "$PI_WORKSPACE" || cd "$HOME/workspace" || exit 1
+exec "${PREFIX:-/data/data/com.termux/files/usr}/bin/pi"
+EOF
+chmod 700 ~/.shortcuts/pi.sh
+```
+
+Then long-press the home screen → **Widgets** → **Termux:Widget** → drop the
+widget and pick `pi`. If the widget shows no shortcuts, run
+`termux-reload-settings` and add it again. `pi-update` repairs the shebang after
+npm updates.
+
 ## SFTP from your phone (Solid Explorer)
 
 Browse and edit `~/workspace/` from any SFTP client on the same Wi-Fi — useful for dropping CSVs into `finanzas/`, pulling session archives, or editing `AGENTS.md` from a real keyboard.
