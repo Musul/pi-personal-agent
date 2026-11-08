@@ -275,38 +275,6 @@ channel extension retry `getUpdates` and log errors; an empty provider key makes
 pi auth check --provider moonshot        # or: --provider opencode-go
 ```
 
-### Home-screen widget (Termux:Widget)
-
-Termux:Widget lives in F-Droid and launches the scripts in `~/.shortcuts/`. It
-shares Termux's UID, so it can read them directly. Enable external commands,
-patch `pi`'s shebang (Termux:Widget cannot use `#!/usr/bin/env node`), and
-create the shortcut:
-
-```bash
-echo 'allow-external-apps=true' >> ~/.termux/termux.properties
-termux-reload-settings
-pkg install which -y
-termux-fix-shebang "$(command -v pi)"
-mkdir -p ~/.shortcuts
-```
-
-```bash
-cat > ~/.shortcuts/pi.sh <<'EOF'
-#!/data/data/com.termux/files/usr/bin/bash
-export PATH="${PREFIX:-/data/data/com.termux/files/usr}/bin:$PATH"
-source "$HOME/.env"
-termux-wake-lock
-cd "$PI_WORKSPACE" || cd "$HOME/workspace" || exit 1
-exec "${PREFIX:-/data/data/com.termux/files/usr}/bin/pi"
-EOF
-chmod 700 ~/.shortcuts/pi.sh
-```
-
-Then long-press the home screen → **Widgets** → **Termux:Widget** → drop the
-widget and pick `pi`. If the widget shows no shortcuts, run
-`termux-reload-settings` and add it again. `pi-update` repairs the shebang after
-npm updates.
-
 ## SFTP from your phone (Solid Explorer)
 
 Browse and edit `~/workspace/` from any SFTP client on the same Wi-Fi — useful for dropping CSVs into `finanzas/`, pulling session archives, or editing `AGENTS.md` from a real keyboard.
@@ -393,29 +361,40 @@ After `autostart` is on, every time you launch `pi` (manually or via the home-sc
 One-tap launch from the Android home screen. Termux:Widget itself was installed in step 0 of the install section.
 
 1. Confirm **Termux:Widget** is installed from F-Droid (not Play Store) and has battery set to **Unrestricted** in Android settings.
-2. After installing the agent, fix the `pi` shebang so the widget can spawn it:
+2. Allow external commands (Termux refuses `RUN_COMMAND` intents otherwise):
+
+   ```bash
+   echo 'allow-external-apps=true' >> ~/.termux/termux.properties
+   termux-reload-settings
+   ```
+
+3. Fix the `pi` shebang so the widget can spawn it:
 
    ```bash
    pkg install which -y
-   termux-fix-shebang $(which pi)
+   termux-fix-shebang "$(command -v pi)"
    ```
 
-3. Create a launcher script and make it executable:
+4. Create a launcher script and make it executable:
 
    ```bash
    mkdir -p ~/.shortcuts
    cat > ~/.shortcuts/pi.sh <<'EOF'
    #!/data/data/com.termux/files/usr/bin/bash
+   export PATH="${PREFIX:-/data/data/com.termux/files/usr}/bin:$PATH"
    source "$HOME/.env"
    termux-wake-lock
    sshd
-   cd "$PI_WORKSPACE" || cd ~/workspace || exit 1
-   pi
+   cd "$PI_WORKSPACE" || cd "$HOME/workspace" || exit 1
+   exec "${PREFIX:-/data/data/com.termux/files/usr}/bin/pi"
    EOF
-   chmod +x ~/.shortcuts/pi.sh
+   chmod 700 ~/.shortcuts/pi.sh
    ```
 
-4. Long-press the home screen → **Widgets** → **Termux:Widget** → pick `pi.sh`.
+5. Long-press the home screen → **Widgets** → **Termux:Widget** → pick `pi.sh`.
+
+If the widget shows no shortcuts, run `termux-reload-settings` and add it
+again. `pi-update` repairs the shebang after npm updates.
 
 ## Scheduled runs (pi-cron)
 
