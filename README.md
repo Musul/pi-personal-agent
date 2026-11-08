@@ -239,6 +239,9 @@ pi --help >/dev/null && echo "extensions OK"
 `pi --help` loads all extensions; if one fails, it prints the failing path and
 the missing module before the help text.
 
+> When running `pi -p` over SSH or from a script, add `</dev/null`. Without it,
+> `pi` waits for stdin EOF and looks hung even though the model already replied.
+
 > **npm 12+** blocks `git:` dependencies by default. `migrate.sh` passes
 > `--allow-git=all` automatically on npm >= 12. If an older checkout reports
 > `EALLOWGIT` while installing `pi-tool-parse-document`, run:

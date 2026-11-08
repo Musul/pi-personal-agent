@@ -137,6 +137,19 @@ bash pi-system/scripts/pi-remote.sh provider verify
 bash pi-system/scripts/pi-remote.sh push ./AGENTS.user.md '~/workspace/AGENTS.user.md'
 ```
 
+### Non-interactive prompts over SSH
+
+`pi -p` reads stdin when it is not attached to a TTY. Over SSH the pipe stays
+open, so the process appears to hang forever even after the model replied.
+Redirect stdin explicitly:
+
+```bash
+pi-remote.sh run 'cd ~ && pi -p "Responde solo: OK" --no-session --no-tools </dev/null'
+```
+
+Apply the same rule to cron jobs, scripts, and plain `ssh host 'pi -p ...'`
+invocations. Only omit `</dev/null` when you are piping a prompt on purpose.
+
 ## 4. Troubleshooting
 
 ### `LAN IP: <none — Wi-Fi off?>`
