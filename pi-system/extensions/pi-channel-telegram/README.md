@@ -51,6 +51,13 @@ When the relay is enabled:
 - If the agent is idle, your message starts a new turn; if busy, it's queued as a follow-up
 - Tool calls can be notified live to Telegram (toggle with `/telegram tools`)
 
+## Message batching and dedupe (local fork)
+
+- **Rapid messages are coalesced:** two or more messages from the same chat within ~1.5 s are joined with a newline and sent to the agent as one turn. A thought split into "Gasté 9000 bs" + "De mi papá" produces one answer, not two.
+- **Identical responses are deduped:** the same final text to the same chat is not sent twice within ~15 s. This covers the `turn_end` primary send and the `agent_end` error/abort fallback, plus repeated cron completion events.
+- **Autostart only in interactive sessions:** a headless/cron subprocess does not start a second bot poller or relay. Cron results are delivered by the parent session through `cron:job_complete`.
+- Constants live in `src/index.ts`: `TELEGRAM_COALESCE_MS` and `OUTBOUND_DEDUPE_MS`.
+
 ## Security
 
 - Only messages from your configured `chat_id` are accepted

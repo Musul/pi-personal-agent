@@ -385,21 +385,22 @@ function delay(ms: number): Promise<void> {
 /**
  * Send a text message with retry and exponential backoff.
  */
-export async function sendTextWithRetry(chatId: number, text: string, parseMode?: "HTML", retries = 3): Promise<void> {
+export async function sendTextWithRetry(chatId: number, text: string, parseMode?: "HTML", retries = 3): Promise<boolean> {
 	for (let i = 0; i < retries; i++) {
 		try {
 			await sendText(chatId, text, parseMode);
-			return;
+			return true;
 		} catch (err: any) {
 			if (i === retries - 1) {
 				console.error("[telebridge] Send failed after retries:", err.message);
-				return;
+				return false;
 			}
 			const waitMs = 1000 * (i + 1);
 			console.log(`[telebridge] Send failed, retrying in ${waitMs}ms...`);
 			await delay(waitMs);
 		}
 	}
+	return false;
 }
 
 /**

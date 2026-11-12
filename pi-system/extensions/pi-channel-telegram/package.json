@@ -1,6 +1,6 @@
 {
   "name": "pi-channel-telegram",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Telegram channel extension for pi-mono. Forked from pi-telebridge with cron integration, document support, async turn tracking, and retry logic.",
   "type": "module",
   "keywords": [

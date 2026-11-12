@@ -1,6 +1,6 @@
 {
   "name": "pi-channel-telegram",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "type": "channel",
   "description": "Telegram I/O channel: message relay, voice/photo/document ingest, tool call notifications, cron job notifications.",
   "entry": "./src/index.ts",

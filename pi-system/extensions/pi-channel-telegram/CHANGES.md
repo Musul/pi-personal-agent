@@ -2,6 +2,25 @@
 
 Fork local de [`pi-telebridge`](https://github.com/acarerdinc/pi-telebridge). Renombrado a `pi-channel-telegram` para alinear con el contrato de canales de pi-system.
 
+## 2026-11-09 — v2.0.2 — Fix respuestas finales duplicadas
+
+**Bug:** al mandar varios mensajes seguidos por Telegram (o al completarse un cron job), la misma respuesta final aparecía dos o más veces.
+
+**Causa:**
+- Cada mensaje se inyectaba al agente por separado; dos mensajes rápidos generaban dos turnos y dos respuestas, aunque fueran una sola idea.
+- `turn_end` envía la respuesta del turno y `agent_end` la reenviaba como fallback de error/abort. Si ambos disparaban con el mismo texto, se duplicaba.
+- El handler de `cron:job_complete` no deduplicaba eventos repetidos.
+
+**Fix:**
+- **Coalescing de entrada:** mensajes de Telegram del mismo chat con menos de 1.5 s de separación se agrupan en un solo mensaje (`\n`) y un solo turno. Menos turnos = menos batería y una sola respuesta.
+- **Dedupe de salida:** respuestas idénticas al mismo chat dentro de 15 s se envían una sola vez. Cubre `turn_end` + `agent_end`, reintentos y eventos de cron repetidos.
+- `agent_end` ahora compara el último mensaje del asistente con lo ya enviado antes de usar el fallback.
+- `cron:job_complete` usa una clave de job + resultado (sin duración) para colapsar eventos duplicados.
+- Autostart de Telegram solo en sesiones con UI (`ctx.hasUI`): una sesión headless/cron no levanta un segundo poller ni relay.
+- `sendTextWithRetry` devuelve `boolean`; el fallback HTML → texto plano ahora funciona de verdad (antes el error se tragaba en el retry).
+
+Constantes ajustables en `src/index.ts`: `TELEGRAM_COALESCE_MS` (1500) y `OUTBOUND_DEDUPE_MS` (15000).
+
 ## 2026-04-25 — v2.0.1 — Fix race condition en transición de turnos
 
 **Bug:** un mensaje de Telegram que llegaba justo mientras el agente estaba terminando la respuesta final del turno previo (entre `turn_end` del turno A y `message_start` del turno B) hacía que la respuesta del turno B nunca se enviara a Telegram.

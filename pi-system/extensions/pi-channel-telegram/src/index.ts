@@ -26,6 +26,27 @@ interface TelegramPending {
 	text: string;
 }
 
+// Dedupe identical outbound messages for a short window. `turn_end` sends the
+// final answer and `agent_end` is a fallback; without this guard the fallback
+// can resend the same text. Cron events emitted twice are also collapsed here.
+// Module scope (not the extension factory) so duplicate extension instances in
+// the same process share the guard.
+const OUTBOUND_DEDUPE_MS = 15_000;
+const recentOutbound = new Map<string, number>();
+
+function isRecentlySent(key: string): boolean {
+	const now = Date.now();
+	for (const [k, at] of recentOutbound) {
+		if (now - at > OUTBOUND_DEDUPE_MS) recentOutbound.delete(k);
+	}
+	const last = recentOutbound.get(key);
+	return last !== undefined && now - last < OUTBOUND_DEDUPE_MS;
+}
+
+function markRecentlySent(key: string) {
+	recentOutbound.set(key, Date.now());
+}
+
 export default function (pi: ExtensionAPI) {
 	let relayEnabled = false;
 	let chatId: number | null = null;
@@ -35,6 +56,17 @@ export default function (pi: ExtensionAPI) {
 	// Async turn-tracking state
 	const telegramQueue: TelegramPending[] = [];
 	let activeTurnChatId: number | null = null;
+
+	// Coalesce rapid-fire Telegram messages into one agent turn. This avoids
+	// multiple turns (and multiple identical final answers) when the user sends
+	// a thought split across two or three messages.
+	const TELEGRAM_COALESCE_MS = 1500;
+	let incomingBuffer: {
+		chatId: number;
+		parts: string[];
+		ctx: ExtensionContext;
+		timer: ReturnType<typeof setTimeout>;
+	} | null = null;
 
 	// ── Setup Flow ──────────────────────────────────────────────
 
@@ -89,6 +121,29 @@ export default function (pi: ExtensionAPI) {
 
 	// ── Incoming Message Handler ────────────────────────────────
 
+	function clearIncomingBuffer() {
+		if (incomingBuffer) {
+			clearTimeout(incomingBuffer.timer);
+			incomingBuffer = null;
+		}
+	}
+
+	function flushIncomingBuffer() {
+		const buffer = incomingBuffer;
+		if (!buffer) return;
+		incomingBuffer = null;
+		clearTimeout(buffer.timer);
+		if (!relayEnabled) return;
+
+		const text = buffer.parts.join("\n");
+		telegramQueue.push({ chatId: buffer.chatId, text });
+		if (buffer.ctx.isIdle()) {
+			pi.sendUserMessage(text);
+		} else {
+			pi.sendUserMessage(text, { deliverAs: "steer" });
+		}
+	}
+
 	function enqueueTelegramMessage(chatId: number, text: string, ctx: ExtensionContext) {
 		if (!relayEnabled) {
 			sendTextWithRetry(chatId, "⚠️ Relay is disabled. Enable with /telegram in pi.");
@@ -100,13 +155,22 @@ export default function (pi: ExtensionAPI) {
 			ctx.ui.notify(`📱 Telegram: ${text.length > 60 ? text.slice(0, 60) + "…" : text}`, "info");
 		}
 
-		// Queue for turn tracking and send to agent
-		telegramQueue.push({ chatId, text });
-		if (ctx.isIdle()) {
-			pi.sendUserMessage(text);
-		} else {
-			pi.sendUserMessage(text, { deliverAs: "steer" });
+		// Coalesce bursts: two messages sent seconds apart are one thought.
+		if (incomingBuffer && incomingBuffer.chatId !== chatId) {
+			flushIncomingBuffer();
 		}
+		if (!incomingBuffer) {
+			incomingBuffer = {
+				chatId,
+				parts: [],
+				ctx,
+				timer: setTimeout(flushIncomingBuffer, TELEGRAM_COALESCE_MS),
+			};
+		} else {
+			clearTimeout(incomingBuffer.timer);
+			incomingBuffer.timer = setTimeout(flushIncomingBuffer, TELEGRAM_COALESCE_MS);
+		}
+		incomingBuffer!.parts.push(text);
 	}
 
 	function wireIncomingHandler(ctx: ExtensionContext) {
@@ -180,6 +244,7 @@ export default function (pi: ExtensionAPI) {
 
 	async function disableRelay(ctx: ExtensionContext) {
 		relayEnabled = false;
+		clearIncomingBuffer();
 		pi.appendEntry("telebridge-state", { enabled: false });
 
 		if (ctx.hasUI) {
@@ -366,6 +431,14 @@ export default function (pi: ExtensionAPI) {
 
 		if (!assistantText.trim()) {
 			console.log("[telebridge] agent_end fallback: no assistant text found");
+			stopTyping();
+			return;
+		}
+
+		// `turn_end` already sent this exact final message: do not resend it.
+		const dedupeKey = `assistant:${targetChatId}:${assistantText.trim()}`;
+		if (isRecentlySent(dedupeKey)) {
+			stopTyping();
 			return;
 		}
 
@@ -378,6 +451,14 @@ export default function (pi: ExtensionAPI) {
 
 	pi.events.on("cron:job_complete", async (event: any) => {
 		if (!relayEnabled || !chatId) return;
+
+		// The same cron completion can reach this handler from more than one
+		// process/path. Collapse identical results for a short window.
+		const cronKey = `cron:${chatId}:${event.job?.name ?? "cron"}:${event.ok ? "ok" : "err"}:${event.response ?? event.error ?? ""}`;
+		if (isRecentlySent(cronKey)) return;
+		// Mark before sending: cron events can arrive back-to-back and the
+		// handler is async. This collapses them even if the first send is slow.
+		markRecentlySent(cronKey);
 
 		const prefix = event.ok ? "✅" : "❌";
 		let text = `${prefix} Cron "${event.job.name}" completed (${(event.durationMs / 1000).toFixed(1)}s)`;
@@ -410,6 +491,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", async (_event, ctx) => {
 		stopTyping();
 		await stopBot();
+		clearIncomingBuffer();
 		relayEnabled = false;
 		telegramQueue.length = 0;
 		activeTurnChatId = null;
@@ -419,6 +501,11 @@ export default function (pi: ExtensionAPI) {
 
 		const cfg = loadConfig();
 		if (!cfg?.autoEnable) return;
+
+		// Headless sessions (cron subprocesses, one-shot runs) must not start a
+		// second Telegram poller or relay. The interactive session owns Telegram;
+		// cron results reach it through `cron:job_complete`.
+		if (!ctx.hasUI) return;
 
 		const token = resolveToken();
 		const persistedChat = resolveChatId();
@@ -446,6 +533,7 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_before_switch", async (_event, ctx) => {
 		stopTyping();
+		clearIncomingBuffer();
 		if (relayEnabled && chatId) {
 			await sendTextWithRetry(chatId, "📴 Session switching...");
 		}
@@ -460,6 +548,7 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_shutdown", async (_event, ctx) => {
 		stopTyping();
+		clearIncomingBuffer();
 		if (relayEnabled && chatId) {
 			await sendTextWithRetry(chatId, "📴 pi session ended");
 		}
@@ -503,21 +592,38 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	async function sendAssistantResponse(targetChatId: number, assistantText: string) {
-		const html = markdownToTelegramHtml(assistantText);
+		const normalized = assistantText.trim();
+		if (!normalized) return;
+
+		// `turn_end` is the primary sender; `agent_end` is the error/abort
+		// fallback. Both can carry the same final assistant message, so skip an
+		// identical send inside a short window.
+		const dedupeKey = `assistant:${targetChatId}:${normalized}`;
+		if (isRecentlySent(dedupeKey)) return;
+
+		const html = markdownToTelegramHtml(normalized);
 		const chunks = splitForTelegram(html);
+		let allSent = true;
 
 		for (const chunk of chunks) {
-			try {
-				await sendTextWithRetry(targetChatId, chunk, "HTML");
-			} catch {
-				// If HTML parsing fails, fallback to plain text
-				try {
-					await sendTextWithRetry(targetChatId, assistantText.slice(0, 4096));
-				} catch {
-					console.error("[telebridge] Failed to send response to Telegram");
-				}
+			const ok = await sendTextWithRetry(targetChatId, chunk, "HTML");
+			if (!ok) {
+				allSent = false;
+				break;
 			}
 		}
+
+		// If HTML parsing/sending fails, fall back to plain text. Short messages
+		// are one chunk in practice; long ones are rare in Telegram mode.
+		if (!allSent) {
+			const ok = await sendTextWithRetry(targetChatId, normalized.slice(0, 4096));
+			if (!ok) {
+				console.error("[telebridge] Failed to send response to Telegram");
+				return;
+			}
+		}
+
+		markRecentlySent(dedupeKey);
 	}
 
 	function formatToolSummary(toolName: string, args: any): string | null {
