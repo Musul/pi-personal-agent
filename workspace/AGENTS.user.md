@@ -125,6 +125,21 @@ bash ~/pi-system/extensions/pi-tool-backup/restore.sh <archivo.tar.gz> --install
 
 Incluye `workspace/`, `pi-system/extensions/`, `pi-system/docs/`, `pi-system/scripts/`, configs mínimos de `~/.pi/agent/`. Excluye `node_modules`, logs, tmp. Se parte en trozos de 45MB para Telegram. Requiere `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`. Si hay datos sensibles confirmo antes de enviar. No espontáneo más de 1x/hora salvo pedido.
 
+### Scheduler
+
+Dos tipos, no mezclar:
+- **Agent job** (necesita razonar): tool `cron` / `/cron` → `~/.pi/agent/pi-cron.tab`. Gasta 1 turno de LLM.
+- **Shell job** (script determinista): `node ~/pi-system/scripts/pi-schedule.js ...` → Android JobScheduler. 0 LLM y corre con `pi` cerrado.
+
+```bash
+node ~/pi-system/scripts/pi-schedule.js add backup --command "bash ~/pi-system/extensions/pi-tool-backup/pi-backup.sh --local-only" --every 7d
+node ~/pi-system/scripts/pi-schedule.js list
+node ~/pi-system/scripts/pi-schedule.js status
+node ~/pi-system/scripts/pi-schedule.js remove backup
+```
+
+`archivar-memoria` corre por JobScheduler cada 24 h para no gastar un turno. Si el usuario pide un cron nuevo: si se puede escribir como script, `pi-schedule`; si requiere interpretar o redactar, `/cron`.
+
 ### Actualizaciones
 
 ```bash

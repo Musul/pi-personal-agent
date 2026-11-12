@@ -24,7 +24,7 @@ pi-system/                  system code (read-only in user mode)
   docs/                     ARCHITECTURE, DEPENDENCIES, REMOTE-TERMUX, developer protocol
   logs/                     backups/, cron/, sessions/{archives,raw}, system/
   config/                   pi-remote.env.example (PC-side template)
-  scripts/                  set-mode, gen-deps-map, migrate, sftp-setup, pi-update, pi-provider, pi-remote
+  scripts/                  set-mode, gen-deps-map, migrate, sftp-setup, pi-update, pi-provider, pi-remote, pi-schedule
   registry.json             source of truth: enabled extensions + versions
   .mode                     current mode marker (user|dev)
 ```
@@ -129,13 +129,14 @@ The Play Store build is outdated and broken. Use F-Droid:
 1. Install **F-Droid**: <https://f-droid.org/F-Droid.apk>
 2. Open F-Droid → search **Termux** → Install: <https://f-droid.org/packages/com.termux/>
 3. Same source, install **Termux:Widget** (needed for the home-screen launcher later): <https://f-droid.org/packages/com.termux.widget/>
-4. Open Termux once so it provisions `$HOME`.
+4. Same source, install **Termux:API** (needed for Android JobScheduler and contacts): <https://f-droid.org/packages/com.termux.api/>
+5. Open Termux once so it provisions `$HOME`.
 
 ### 1. Disable battery optimization for Termux
 
 Android will kill Termux in the background otherwise — your agent stops, cron stops, the Telegram bridge dies.
 
-Settings → **Apps** → **Termux** → **Battery** → set to **Unrestricted** (some OEMs label it "Don't optimize" or "No restrictions"). Repeat for **Termux:Widget**.
+Settings → **Apps** → **Termux** → **Battery** → set to **Unrestricted** (some OEMs label it "Don't optimize" or "No restrictions"). Repeat for **Termux:Widget** and **Termux:API**.
 
 ### 2. Base packages
 
@@ -150,7 +151,7 @@ apt update && apt full-upgrade
 Then install the runtime dependencies:
 
 ```bash
-pkg install nodejs git poppler tesseract curl -y
+pkg install nodejs git poppler tesseract curl termux-api -y
 ```
 ```bash
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
@@ -396,21 +397,50 @@ One-tap launch from the Android home screen. Termux:Widget itself was installed 
 If the widget shows no shortcuts, run `termux-reload-settings` and add it
 again. `pi-update` repairs the shebang after npm updates.
 
-## Scheduled runs (pi-cron)
+## Scheduled runs (agent + shell)
 
-`pi-cron-forked` runs the agent on a cron schedule and emits `cron:job_complete` so `pi-channel-telegram` forwards results to your phone.
+Hay dos schedulers, a propósito:
+
+| Tipo | Herramienta | LLM | Requiere `pi` abierto | Cuándo usarlo |
+|---|---|---|---|---|
+| **Agent job** | `pi-cron-forked` / `/cron` | Sí, 1 turno | Sí | La tarea necesita interpretar, decidir o redactar (`revisar-tareas`). |
+| **Shell job** | `pi-schedule.js` + Android JobScheduler | No | No | La tarea es un script determinista (archivar, backup, export, limpieza). |
+
+### Agent jobs (pi-cron)
 
 - Schedule file: `~/.pi/agent/pi-cron.tab` (cron syntax + prompt).
 - Autostart and active hours live in `.pi/agent/settings.json` under `pi-cron`.
 - Cron subprocesses inherit `defaultProvider` / `defaultModel`; `pi-provider.sh` keeps the `pi-cron.provider` / `pi-cron.model` fields in sync for compatibility, but the effective model comes from the global default.
 - Job logs land in `pi-system/logs/cron/`.
+- Default: `revisar-tareas` — every 12h, reads `workspace/TAREAS.md` and ejecuta tareas pendientes autónomamente.
 
-Repo ships with two defaults in [`.pi/agent/pi-cron.tab`](.pi/agent/pi-cron.tab):
+Manage from inside pi via `/cron` commands (added by the extension).
 
-- `revisar-tareas` — every 12h, reads `workspace/TAREAS.md` and ejecuta tareas pendientes autónomamente.
-- `archivar-memoria` — daily 03:00, runs `pi-tool-archive` para rotar sesiones.
+### Shell jobs (Android JobScheduler)
 
-Edit or delete them freely — the file is yours. Manage from inside pi via `/cron` commands (added by the extension).
+`pi-schedule.js` registers scripts with Android's JobScheduler. Android wakes the device, runs the script and releases its wake lock; **no LLM turn, no `pi` session required**. Timing is approximate and the minimum period is 15 minutes.
+
+```bash
+# one-time: install the default archive job (~daily; JobScheduler picks the time)
+node ~/pi-system/scripts/pi-schedule.js install-defaults
+
+node ~/pi-system/scripts/pi-schedule.js list
+node ~/pi-system/scripts/pi-schedule.js status
+node ~/pi-system/scripts/pi-schedule.js add backup --command "bash ~/pi-system/extensions/pi-tool-backup/pi-backup.sh --local-only" --every 7d
+node ~/pi-system/scripts/pi-schedule.js remove backup
+node ~/pi-system/scripts/pi-schedule.js run archivar-memoria   # probar ahora
+```
+
+Cada job genera un wrapper en `~/.pi/agent/jobs/<name>.sh` que:
+
+- sourcea `~/.env`;
+- corre desde `~/workspace`;
+- loguea en `~/pi-system/logs/system/<name>.log`;
+- sale con el código del comando.
+
+`install-defaults` registra `archivar-memoria` cada 24 h. El repo trae la entrada vieja de `pi-cron.tab` comentada; si tu copia local todavía la tiene activa, comentala/eliminala para no duplicar.
+
+> Requiere Termux:API (app de F-Droid) y `pkg install termux-api`. Sin eso, `pi-schedule status` lo dice y no registra nada.
 
 ## Updating pi
 
