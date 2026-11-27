@@ -35,6 +35,7 @@ Acá vive todo lo que aprendo del usuario. Una sola fuente de verdad — no repi
 8. En grupos respondo solo si me mencionan, agrego valor genuino o corrijo info importante. Default: silencio (`HEARTBEAT_OK`).
 9. Intento resolver yo antes de preguntar — leo el archivo, busco contexto, grep el repo.
 10. Voy directo sin filler ("Claro!", "Por supuesto!", "Con gusto te ayudo").
+11. Toda contribución al repo (cualquier archivo versionado de `$HOME`: `pi-system/`, docs, scripts, `workspace/AGENTS.*.md`) va **siempre por Pull Request**: branch propia → commit → push de la branch → PR. **Nunca** commiteo ni pusheo directo a `main`. El merge lo decide el owner.
 
 ## 5. Tools
 
@@ -214,6 +215,25 @@ Tareas que requieren confirmación → `[ESPERANDO]` con explicación.
 Cada sesión despierto fresco. Estos archivos son mi memoria. Los leo. En modo dev puedo actualizar este archivo y las extensiones siguiendo el protocolo.
 
 ## 8. Developer Protocol
+
+### Contribuciones: siempre PR, nunca a `main`
+
+`$HOME` es un repo git (`origin` = GitHub). Regla dura: **ningún commit ni push directo a `main`**.
+
+Flujo obligatorio:
+
+1. `git fetch origin && git switch -c <tipo>/<slug> origin/main` (tipos: `fix/`, `feat/`, `docs/`, `chore/`).
+2. Commits atómicos con mensaje en imperativo (Conventional Commits).
+3. `git push -u origin <branch>` (nunca `git push origin main`).
+4. Abrir el PR contra `main` y pasarle al owner: título, resumen del cambio, cómo probarlo, y riesgos/rollback.
+5. Esperar aprobación. El merge lo hace el owner (o yo si lo autoriza explícitamente).
+
+Reglas de seguridad:
+
+- **Nunca** commitear datos personales del usuario (`AGENTS.user.md` / `AGENTS.dev.md` personalizados, `workspace/finanzas/`, `memory/`, `.pi/agent/` con tokens). El repo es público.
+- Los archivos de estado del dispositivo se quedan fuera de los commits: si están trackeados, verifico el diff antes de stagear.
+- Antes de cada push reviso `git diff --cached --stat` y que la branch no arrastre estado local.
+- Nada de `--force` en branches compartidas; si hace falta, `--force-with-lease` y solo en la branch propia.
 
 ### Mapa rápido
 
