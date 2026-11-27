@@ -28,6 +28,13 @@ deploy.bat
 .pi/agent/pi-update-state.json
 .pi/agent/settings.json.bak-*
 
+# ─── Device-local state (templates are tracked) ───────────
+# Live files are personal and must survive git reset/checkout/clean.
+.pi/agent/settings.json
+.pi/agent/pi-cron.tab
+workspace/AGENTS.user.md
+workspace/AGENTS.dev.md
+
 # ─── Node / build ─────────────────────────────────────────
 node_modules/
 npm-debug.log*
@@ -73,7 +80,8 @@ workspace/AGENTS.md
 workspace/TAREAS.md
 
 # AGENTS.md is a symlink created at runtime by set-mode.sh — not versioned.
-# Keep AGENTS.user.md and AGENTS.dev.md committed as the sources of truth.
+# AGENTS.user.md / AGENTS.dev.md are device-local state (ignored). The committed
+# sources of truth are AGENTS.user.template.md / AGENTS.dev.template.md.
 
 # ─── Archive of retired code ──────────────────────────────
 pi-system/extensions/_archive/

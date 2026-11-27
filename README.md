@@ -7,13 +7,16 @@ Designed for two audiences: yourself, and customers who want a ready-to-run agen
 ## What's in here
 
 ```
-.pi/agent/                  pi-mono runtime (tracked: settings.json only)
-  settings.json             provider, model, autoload extensions
+.pi/agent/                  pi-mono runtime (templates tracked; live state ignored)
+  settings.template.json    tracked defaults
+  settings.json             provider, model, autoload extensions (device-local)
   telebridge.json           Telegram link state (gitignored)
-  pi-cron.tab               cron jobs (tracked; ships with defaults)
+  pi-cron.template.tab      tracked defaults
+  pi-cron.tab               cron jobs (device-local)
 workspace/                  user-owned data — agent writes freely here
   AGENTS.md                 symlink → AGENTS.user.md or AGENTS.dev.md
-  AGENTS.user.md / .dev.md  agent persona + tool docs (committed)
+  AGENTS.*.template.md      tracked persona templates
+  AGENTS.user.md / .dev.md  live persona + tool docs (device-local)
   TAREAS.md                 autonomous task list, read on every session
   memory/                   session archives (md + html)
   finanzas/                 transactions, loans, investments (CSV/JSON)
@@ -28,6 +31,16 @@ pi-system/                  system code (read-only in user mode)
   registry.json             source of truth: enabled extensions + versions
   .mode                     current mode marker (user|dev)
 ```
+
+### Device state
+
+`settings.json`, `pi-cron.tab` and `AGENTS.{user,dev}.md` are **device-local and gitignored**:
+your provider/model, cron jobs and persona survive `git reset`, `git checkout` and `git clean`.
+The committed sources are the `*.template.*` files; `bash pi-system/scripts/state-init.sh` creates
+each live file from its template when missing.
+
+Upgrading an install that still tracked these files: run once
+`bash pi-system/scripts/state-migrate.sh --apply` (backs up, pulls, restores the live state).
 
 Three hard rules:
 
