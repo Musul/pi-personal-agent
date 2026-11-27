@@ -389,13 +389,28 @@ export default function (pi: ExtensionAPI) {
 
 		const assistantText = extractAssistantText(msg);
 		const hasToolCalls = event.toolResults && event.toolResults.length > 0;
+		// A provider error (or an empty completion) produces an assistant message
+		// with no content and `stopReason: "error"`. pi retries the request and the
+		// real answer arrives in a later turn, so the chat binding must survive.
+		const emptyOrFailed = !assistantText.trim() || (msg as any).stopReason === "error";
 
 		if (assistantText.trim()) {
 			await sendAssistantResponse(activeTurnChatId, assistantText);
 		}
 
-		// Only clear the binding if this turn didn't spawn more tool calls.
-		// If there are tool calls, another turn with the final response is coming.
+		// Only clear the binding if this turn didn't spawn more tool calls and
+		// actually produced an answer. If there are tool calls, another turn with
+		// the final response is coming; if the turn ended empty/failed, a retry is.
+		if (!hasToolCalls && emptyOrFailed) {
+			stopTyping();
+			console.log(
+				"[telebridge] turn ended without content (stopReason:",
+				(msg as any).stopReason,
+				") — keeping chat binding for the retry"
+			);
+			return;
+		}
+
 		if (!hasToolCalls) {
 			activeTurnChatId = null;
 			stopTyping();
@@ -430,7 +445,11 @@ export default function (pi: ExtensionAPI) {
 		}
 
 		if (!assistantText.trim()) {
-			console.log("[telebridge] agent_end fallback: no assistant text found");
+			console.error(
+				"[telebridge] agent_end: no assistant text to send — the model returned only errors; response dropped (chat:",
+				targetChatId,
+				")"
+			);
 			stopTyping();
 			return;
 		}
