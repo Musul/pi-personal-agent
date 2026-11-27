@@ -36,6 +36,17 @@ for d in "$WS" "$HOME_DIR/.pi/agent"; do
 done
 echo "  OK: $WS and ~/.pi/agent exist."
 
+say "Ensuring device-local state files (templates → live)"
+if [[ -f "$SYS/scripts/state-init.sh" ]]; then
+  if $APPLY; then
+    bash "$SYS/scripts/state-init.sh"
+  else
+    echo "  (dry) bash $SYS/scripts/state-init.sh"
+  fi
+else
+  echo "  (skip) state-init.sh missing in this checkout"
+fi
+
 say "Ensuring pi-system/ is writable (dev mode) before any fs writes"
 if $APPLY && [[ -x "$SYS/scripts/set-mode.sh" ]]; then
   run "bash $SYS/scripts/set-mode.sh dev"

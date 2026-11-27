@@ -464,6 +464,17 @@ if (( DO_REPO )); then
   fi
 fi
 
+# ── Device-local state ───────────────────────────────────────────────────
+# Live settings/cron/persona are gitignored; the repo ships templates.
+# Recreate any missing live file after a fresh clone or a repo migration.
+if [[ -f "$SYS_DIR/scripts/state-init.sh" ]]; then
+  if (( DRY )); then
+    log "(check) bash $SYS_DIR/scripts/state-init.sh"
+  else
+    bash "$SYS_DIR/scripts/state-init.sh" || warn "state-init failed"
+  fi
+fi
+
 # ── Pi CLI update ───────────────────────────────────────────────────────
 if (( DO_SELF )); then
   say "Pi CLI"
